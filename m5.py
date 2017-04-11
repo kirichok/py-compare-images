@@ -42,8 +42,8 @@ e1 = cv2.getTickCount()
 MIN_MATCH_COUNT = 100
 PATH = './images/'
 
-fn1 = 'T7.jpg'
-fn2 = 'T8.jpg'
+fn1 = 'j2.jpg'
+fn2 = 'j3.jpg'
 
 t_start = cv2.getTickCount()
 img1 = cv2.imread(PATH + fn1, 0)  # queryImage
