@@ -5,11 +5,11 @@ import glob
 # import kie_const
 import numpy as np
 import kie_image as image
+import argparse
 
 HASH_PATH = '../images/hash3/'
 KPC_EXT = '.kpc'
 
-THREAD_COUNT = 1
 exitFlag = 0
 
 
@@ -49,17 +49,25 @@ class HashThread(threading.Thread):
         print "Exiting " + self.name
 
 
-img = image.loadImageFromPath('../images/M6.jpg', cv2.IMREAD_GRAYSCALE, True, 200)
+ap = argparse.ArgumentParser()
+ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count")
+ap.add_argument("-i", "--image", required=True, help="Path to the image")
+ap.add_argument("-hs", "--hash", required=True, help="Path to the hash files")
+args = vars(ap.parse_args())
+
+print args
+
+img = image.loadImageFromPath(args['image'], cv2.IMREAD_GRAYSCALE, True, 200)
 kp, des = image.getKpDes(img)
 
 threadList = []
 count = 0
-while count < THREAD_COUNT:
+while count < args['threads']:
     threadList.append("Thread-%d" % count)
     count += 1
 
 nameList = []
-for imagePath in glob.glob("../images/hash3/*%s" % KPC_EXT):
+for imagePath in glob.glob("%s*%s" % (args['hash'], KPC_EXT)):
     nameList.append(imagePath)
 
 if len(nameList) == 0:
@@ -75,6 +83,7 @@ threadID = 1
 # Create new threads
 for tName in threadList:
     thread = HashThread(threadID, tName, workQueue)
+    # thread.daemon = True
     thread.start()
     threads.append(thread)
     threadID += 1
