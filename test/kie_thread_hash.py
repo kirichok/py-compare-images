@@ -4,6 +4,7 @@ import cv2
 import time
 # import mysql_conn
 
+import os, os.path
 import kie_mysql as sql
 import kie_image as image
 
@@ -19,6 +20,8 @@ class HashThread(threading.Thread):
         self.threadID = threadID
         self.name = name
         self.q = q
+        self.folder = 0
+        self.newpath = HASH_PATH + self.folder + '/'
 
     def run(self):
         print("Starting " + self.name)
@@ -27,6 +30,17 @@ class HashThread(threading.Thread):
             queueLock.acquire()
             if not workQueue.empty():
                 url = self.q.get()
+                if self.folder > folder:
+                    folder = self.folder
+                if os.path.exists(self.newpath):
+                    if len([name for name in os.listdir(self.newpath)]) == 2000:
+                        self.folder += 1
+                        folder = self.folder
+                        self.newpath = HASH_PATH + self.folder + '/'
+                        os.makedirs(self.newpath)
+                else:
+                    os.makedirs(self.newpath)
+
                 queueLock.release()
                 # fn = currQueue['fn']
                 # urls = currQueue['urls']
@@ -42,7 +56,7 @@ class HashThread(threading.Thread):
 
                 img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
                 name = image.fileName(url)
-                image.keypointDesCalc(img, HASH_PATH + name)
+                image.keypointDesCalc(img, self.newpath + name)
 
 
                 # image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
@@ -51,7 +65,7 @@ class HashThread(threading.Thread):
 
         print("Exiting " + self.name)
 
-
+folder = 0
 threadList = []
 count = 0
 while count < THREAD_COUNT:
