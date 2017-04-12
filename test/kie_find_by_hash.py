@@ -35,17 +35,18 @@ class HashThread(threading.Thread):
                 queueLock.release()
 
                 des2 = image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False)
+                des2 = np.asarray(des2, np.float32)
                 name = image.fileName(path)
-
-                m = image.match(des1, np.asarray(des2, np.float32))
-                if len(m) >= 50:
-                    print "Matched %s file %s" % (len(m), name)
+                if isinstance(des2, list) and len(des2) >= 2:
+                    m = image.match(des1, des2)
+                    if len(m) >= 50:
+                        print "Matched %s file %s" % (len(m), name)
             else:
                 queueLock.release()
 
         print "Exiting " + self.name
 
-img = image.loadImageFromPath('../images/M6.jpg', cv2.IMREAD_GRAYSCALE, True, 200)
+img = image.loadImageFromPath('../images/z1.jpg', cv2.IMREAD_GRAYSCALE, True, 200)
 kp, des = image.getKpDes(img)
 
 threadList = []
@@ -72,6 +73,7 @@ threadID = 1
 # Create new threads
 for tName in threadList:
     thread = HashThread(threadID, tName, workQueue)
+    thread.daemon = True
     thread.start()
     threads.append(thread)
     threadID += 1
