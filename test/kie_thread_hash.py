@@ -11,8 +11,10 @@ import kie_image as image
 HASH_PATH = '../images/hash/'
 KPC_EXT = '.kpc'
 
+gl = {'folder': 0}
 THREAD_COUNT = 200
 exitFlag = 0
+
 
 class HashThread(threading.Thread):
     def __init__(self, threadID, name, q):
@@ -30,12 +32,15 @@ class HashThread(threading.Thread):
             queueLock.acquire()
             if not workQueue.empty():
                 url = self.q.get()
-                if self.folder > folder:
-                    folder = self.folder
+
+                if self.folder > gl['folder']:
+                    gl['folder'] = self.folder
+                    self.newpath = '%s%s/' % (HASH_PATH, self.folder)
+
                 if os.path.exists(self.newpath):
                     if len([name for name in os.listdir(self.newpath)]) == 2000:
                         self.folder += 1
-                        folder = self.folder
+                        gl['folder'] = self.folder
                         self.newpath = '%s%s/' % (HASH_PATH, self.folder)
                         os.makedirs(self.newpath)
                 else:
@@ -65,7 +70,7 @@ class HashThread(threading.Thread):
 
         print("Exiting " + self.name)
 
-folder = 0
+
 threadList = []
 count = 0
 while count < THREAD_COUNT:
