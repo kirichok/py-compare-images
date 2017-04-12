@@ -111,7 +111,7 @@ for tName in threadList:
 # queueLock.release()
 
 queueLock.acquire()
-_folder = 0
+_folder = 1
 i = 0
 for word in nameList:
     if i == 0:
