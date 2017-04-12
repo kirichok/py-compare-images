@@ -1,4 +1,4 @@
-import pymysql as msc
+import mysql.connector as msc
 
 
 def connect():

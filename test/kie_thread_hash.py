@@ -1,19 +1,19 @@
-import queue
+import Queue
 import threading
 import cv2
 import time
 # import mysql_conn
 
-import os, os.path
 import kie_mysql as sql
 import kie_image as image
 
-HASH_PATH = '../images/hash/'
+HASH_PATH = '../images/hash3/'
+KP_EXT = '.kp'
+DES_EXT = '.des.jpg'
 KPC_EXT = '.kpc'
 
-THREAD_COUNT = 200
+THREAD_COUNT = 10
 exitFlag = 0
-
 
 class HashThread(threading.Thread):
     def __init__(self, threadID, name, q):
@@ -23,51 +23,27 @@ class HashThread(threading.Thread):
         self.q = q
 
     def run(self):
-        print("Starting " + self.name)
+        print "Starting " + self.name
 
         while not exitFlag:
             queueLock.acquire()
             if not workQueue.empty():
-                data = self.q.get()
-                url = data['url']
-                folder = '%s%s/' % (HASH_PATH, data['f'])
-                # if self.folder > gl['folder']:
-                #     gl['folder'] = self.folder
-                #     self.newpath = '%s%s/' % (HASH_PATH, self.folder)
-                #
-                # if os.path.exists(self.newpath):
-                #     if len([name for name in os.listdir(self.newpath)]) >= 2000:
-                #         self.folder += 1
-                #         gl['folder'] = self.folder
-                #         print('new folder: %s' % self.folder)
-                #         self.newpath = '%s%s/' % (HASH_PATH, self.folder)
-                #         os.makedirs(self.newpath)
-                # else:
-                #     os.makedirs(self.newpath)
-
+                currQueue = self.q.get()
                 queueLock.release()
-                # fn = currQueue['fn']
-                # urls = currQueue['urls']
-                # kps = []
-                # for url in urls:
-                #     img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
-                #     name = image.fileName(url)
-                #     kp, des = image.keypointDesCalc(img)
-                #     kps.append(image.pack(kp, des, name))
-                #     time.sleep(0)
-                # image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
-
-
-                img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
-                name = image.fileName(url)
-                image.keypointDesCalc(img, folder + name)
-
-
-                # image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
+                fn = currQueue['fn']
+                urls = currQueue['urls']
+                kps = []
+                for url in urls:
+                    img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
+                    name = image.fileName(url)
+                    kp, des = image.keypointDesCalc(img)
+                    kps.append(image.pack(kp, des, name))
+                    time.sleep(0)
+                image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
             else:
                 queueLock.release()
 
-        print("Exiting " + self.name)
+        print "Exiting " + self.name
 
 
 threadList = []
@@ -82,46 +58,31 @@ if len(nameList) == 0:
     exit(0)
 
 queueLock = threading.Lock()
-workQueue = queue.Queue(1000000)
+workQueue = Queue.Queue(1000000)
 threads = []
 threadID = 1
 
 # Create new threads
 for tName in threadList:
     thread = HashThread(threadID, tName, workQueue)
-    thread.daemon = True
     thread.start()
     threads.append(thread)
     threadID += 1
 
 # Fill the queue
-# queueLock.acquire()
-# tasks = []
-# i = 0
-# hc = 0
-# for word in nameList:
-#     tasks.append(word)
-#     i += 1
-#     if i == 100:
-#         queue = {'fn': 'HASH %d' % hc, 'urls': list(tasks)}
-#         workQueue.put(queue)
-#         hc += 1
-#         i = 0
-#         tasks = []
-# queueLock.release()
-
 queueLock.acquire()
-_folder = 1
+tasks = []
 i = 0
+hc = 0
 for word in nameList:
-    if i == 0:
-        os.makedirs('%s%s/' % (HASH_PATH, _folder))
-    workQueue.put({'url': word, 'f': _folder})
+    tasks.append(word)
     i += 1
-    if i == 1000:
+    if i == 100:
+        queue = {'fn': 'HASH %d' % hc, 'urls': list(tasks)}
+        workQueue.put(queue)
+        hc += 1
         i = 0
-        _folder += 1
-
+        tasks = []
 queueLock.release()
 
 e1 = cv2.getTickCount()
@@ -138,6 +99,6 @@ for t in threads:
 
 e2 = cv2.getTickCount()
 time = (e2 - e1) / cv2.getTickFrequency()
-print("Time: %s" % (time))
+print "Time: %s" % (time)
 
-print("Exiting Main Thread")
+print "Exiting Main Thread"
