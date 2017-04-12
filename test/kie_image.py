@@ -196,9 +196,9 @@ def compare(name1, name2, img1, img2):
         img3 = cv2.drawMatches(img1, kp1, img2, kp2, good, None, **draw_params)
 
         cv2.imwrite("./matched/%d %s_%s" % (len(good), name1, name2), img3)
-        print "Matched (%s - %s) - %d/%d" % (name1, name2, len(good), MIN_MATCH_COUNT)
+        print("Matched (%s - %s) - %d/%d" % (name1, name2, len(good), MIN_MATCH_COUNT))
     else:
-        print "Not enough matches are found (%s - %s) - %d/%d" % (name1, name2, len(good), MIN_MATCH_COUNT)
+        print("Not enough matches are found (%s - %s) - %d/%d" % (name1, name2, len(good), MIN_MATCH_COUNT))
 
 
 def fileName(str):
