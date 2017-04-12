@@ -52,19 +52,20 @@ ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count"
 ap.add_argument("-i", "--image", required=True, help="Path to the image")
 args = vars(ap.parse_args())
 
-
+print(0)
 img = image.loadImageFromPath(args['image'], cv2.IMREAD_GRAYSCALE, True, 200)
 kp, des = image.getKpDes(img)
-
+print(1)
 threadList = []
 count = 0
 while count < args['threads']:
     threadList.append("Thread-%d" % count)
     count += 1
-
+print(2)
 nameList = []
 folder = 1
 path = "%s*%s/" % (HASH_PATH, folder)
+print(path)
 while os.path.exists(path):
     for imagePath in glob.glob("%s*%s" % (path, DES_EXT)):
         nameList.append(imagePath)
