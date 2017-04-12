@@ -10,12 +10,12 @@ import kie_mysql as sql
 import kie_image as image
 
 import os, os.path
+import argparse
 
 HASH_PATH = '../images/hash/'
 KP_EXT = '.kp'
 DES_EXT = '.png'
 
-THREAD_COUNT = 200
 exitFlag = 0
 
 class HashThread(threading.Thread):
@@ -47,12 +47,18 @@ class HashThread(threading.Thread):
 
         print("Exiting " + self.name)
 
-img = image.loadImageFromPath('../images/M6.jpg', cv2.IMREAD_GRAYSCALE, True, 200)
+ap = argparse.ArgumentParser()
+ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count", default=50)
+ap.add_argument("-i", "--image", required=True, help="Path to the image")
+args = vars(ap.parse_args())
+
+
+img = image.loadImageFromPath(args['image'], cv2.IMREAD_GRAYSCALE, True, 200)
 kp, des = image.getKpDes(img)
 
 threadList = []
 count = 0
-while count < THREAD_COUNT:
+while count < args['threads']:
     threadList.append("Thread-%d" % count)
     count += 1
 
