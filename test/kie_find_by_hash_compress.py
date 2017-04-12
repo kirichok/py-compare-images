@@ -1,4 +1,4 @@
-import Queue
+import queue
 import threading
 import cv2
 import glob
@@ -74,7 +74,7 @@ else:
     print("Files count: %d " % len(nameList))
 
 queueLock = threading.Lock()
-workQueue = Queue.Queue(1000000)
+workQueue = queue.Queue(1000000)
 threads = []
 threadID = 1
 
