@@ -86,8 +86,8 @@ def saveKeypointToPath(kp, path):
         temp = (point.pt, point.size, point.angle, point.response, point.octave,
                 point.class_id)
         index.append(temp)
-    f = open(path, "w")
-    f.write(index)
+    f = open(path, "wb")
+    f.write(cPickle.dumps(index))
     f.close()
 
 
