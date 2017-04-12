@@ -11,7 +11,7 @@ import zlib
 # from scipy.stats._continuous_distns import maxwell_gen
 
 KP_EXT = '.kp'
-DES_EXT = '.des.jpg'
+DES_EXT = '.png'
 
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
     resp = urllib.urlopen(url)
@@ -45,9 +45,9 @@ def __getDeltaTransformation(image, maxSize):
 def keypointDesCalc(image, savePath=''):
     kp, des = sift.detectAndCompute(image, None)
     if savePath:
-        saveKpDesToPath(kp, des, savePath + KP_EXT)
-        # saveKeypointToPath(kp, savePath + KP_EXT)
-        # saveDesToPath(des, savePath + DES_EXT)
+        # saveKpDesToPath(kp, des, savePath + KP_EXT)
+        saveKeypointToPath(kp, savePath + KP_EXT)
+        saveDesToPath(des, savePath + DES_EXT)
     return kp, des
 
 
