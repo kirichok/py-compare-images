@@ -21,7 +21,7 @@ class HashThread(threading.Thread):
         self.name = name
         self.q = q
         self.folder = 0
-        self.newpath = HASH_PATH + self.folder + '/'
+        self.newpath = ('%s%s/' % HASH_PATH, self.folder)
 
     def run(self):
         print("Starting " + self.name)
@@ -36,7 +36,7 @@ class HashThread(threading.Thread):
                     if len([name for name in os.listdir(self.newpath)]) == 2000:
                         self.folder += 1
                         folder = self.folder
-                        self.newpath = HASH_PATH + self.folder + '/'
+                        self.newpath = ('%s%s/' % HASH_PATH, self.folder)
                         os.makedirs(self.newpath)
                 else:
                     os.makedirs(self.newpath)
