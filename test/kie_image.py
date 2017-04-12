@@ -5,7 +5,7 @@ import cv2
 import urllib
 import math
 from os.path import basename, splitext
-import cPickle
+import _pickle as cPickle
 import zlib
 
 from scipy.stats._continuous_distns import maxwell_gen
