@@ -19,99 +19,185 @@ DES_EXT = '.png'
 exitFlag = 0
 
 class HashThread(threading.Thread):
-    def __init__(self, threadID, name, q):
+    def __init__(self, threadID, name, lock, workQueue, kp, des, finds):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.q = q
+        self.workQueue = workQueue
+        self.lock = lock
+        self.kp = kp
+        self.des = des
+        self.finds = finds
 
     def run(self):
-        print("Starting " + self.name)
-        queueLock.acquire()
-        des1 = des.copy()
-        queueLock.release()
+        global exitFlag
+        # print("Starting " + self.name)
         while not exitFlag:
-            queueLock.acquire()
-            if not workQueue.empty():
+            self.lock.acquire()
+            if not self.workQueue.empty():
                 path = self.q.get()
-                queueLock.release()
+                self.lock.release()
 
                 des2 = image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False)
                 des2 = np.asarray(des2, np.float32)
                 if len(des2) >= 2:
                     name = image.fileName(path)
-                    m = image.match(des1, des2)
+                    m = image.match(self.des, des2)
                     if len(m) >= 50:
+                        self.lock.acquire()
+                        self.finds.append({'m': len(m), 'n': name})
+                        self.lock.release()
                         print("Matched %s file %s" % (len(m), name))
             else:
-                queueLock.release()
+                self.lock.release()
 
-        print("Exiting " + self.name)
-
-ap = argparse.ArgumentParser()
-ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count", default=50)
-ap.add_argument("-i", "--image", required=True, help="Path to the image")
-args = vars(ap.parse_args())
+        # print("Exiting " + self.name)
 
 
-img = image.loadImageFromPath(args['image'], cv2.IMREAD_GRAYSCALE, True, 200)
-kp, des = image.getKpDes(img)
+def check(imgPath, threadsCount=200):
+    global exitFlag
 
-threadList = []
-count = 0
-while count < args['threads']:
-    threadList.append("Thread-%d" % count)
-    count += 1
+    finds = []
+    exitFlag = 0
+    img = image.loadImageFromPath(imgPath, cv2.IMREAD_GRAYSCALE, True, 200)
+    kp, des = image.getKpDes(img)
 
-nameList = []
-folder = 1
-path = "%s%s/" % (HASH_PATH, folder)
-while os.path.exists(path):
-    for imagePath in glob.glob("%s*%s" % (path, DES_EXT)):
-        nameList.append(imagePath)
-    folder += 1
+    threadList = []
+    count = 0
+    while count < threadsCount:
+        threadList.append("Thread-%d" % count)
+        count += 1
+
+    nameList = []
+    folder = 1
     path = "%s%s/" % (HASH_PATH, folder)
-    print(folder)
+    while os.path.exists(path):
+        for imagePath in glob.glob("%s*%s" % (path, DES_EXT)):
+            nameList.append(imagePath)
+        folder += 1
+        path = "%s%s/" % (HASH_PATH, folder)
+        print(folder)
+
+    if len(nameList) == 0:
+        print("Files count is empty")
+
+    else:
+        print("Files count: %d " % len(nameList))
+
+        queueLock = threading.Lock()
+        workQueue = queue.Queue(1000000)
+        threads = []
+        threadID = 1
+
+        # Create new threads
+        for tName in threadList:
+            thread = HashThread(threadID, tName, queueLock, workQueue, kp, des, finds)
+            thread.start()
+            threads.append(thread)
+            threadID += 1
+
+        # Fill the queue
+        queueLock.acquire()
+        for word in nameList:
+            workQueue.put(word)
+        queueLock.release()
+
+        # Wait for queue to empty
+        while not workQueue.empty():
+            pass
+
+        # Notify threads it's time to exit
+        exitFlag = 1
+
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
+
+        return finds
 
 
-if len(nameList) == 0:
-    print("Files count is empty")
-    exit(0)
-else:
-    print("Files count: %d " % len(nameList))
 
-queueLock = threading.Lock()
-workQueue = queue.Queue(1000000)
-threads = []
-threadID = 1
 
-# Create new threads
-for tName in threadList:
-    thread = HashThread(threadID, tName, workQueue)
-    thread.start()
-    threads.append(thread)
-    threadID += 1
 
-# Fill the queue
-queueLock.acquire()
-for word in nameList:
-    workQueue.put(word)
-queueLock.release()
 
-e1 = cv2.getTickCount()
-# Wait for queue to empty
-while not workQueue.empty():
-    pass
 
-# Notify threads it's time to exit
-exitFlag = 1
 
-# Wait for all threads to complete
-for t in threads:
-    t.join()
 
-e2 = cv2.getTickCount()
-time = (e2 - e1) / cv2.getTickFrequency()
-print("Time: %s s" % (time))
 
-print("Exiting Main Thread")
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count", default=50)
+    ap.add_argument("-i", "--image", required=True, help="Path to the image")
+    args = vars(ap.parse_args())
+
+    e1 = cv2.getTickCount()
+    check(args['image'], args['threads'])
+    e2 = cv2.getTickCount()
+    time = (e2 - e1) / cv2.getTickFrequency()
+    print("Time: %s s" % (time))
+
+    print("Exiting Main Thread")
+
+
+    # img = image.loadImageFromPath(args['image'], cv2.IMREAD_GRAYSCALE, True, 200)
+    # kp, des = image.getKpDes(img)
+    #
+    # threadList = []
+    # count = 0
+    # while count < args['threads']:
+    #     threadList.append("Thread-%d" % count)
+    #     count += 1
+    #
+    # nameList = []
+    # folder = 1
+    # path = "%s%s/" % (HASH_PATH, folder)
+    # while os.path.exists(path):
+    #     for imagePath in glob.glob("%s*%s" % (path, DES_EXT)):
+    #         nameList.append(imagePath)
+    #     folder += 1
+    #     path = "%s%s/" % (HASH_PATH, folder)
+    #     print(folder)
+    #
+    #
+    # if len(nameList) == 0:
+    #     print("Files count is empty")
+    #     exit(0)
+    # else:
+    #     print("Files count: %d " % len(nameList))
+    #
+    # queueLock = threading.Lock()
+    # workQueue = queue.Queue(1000000)
+    # threads = []
+    # threadID = 1
+    #
+    # # Create new threads
+    # for tName in threadList:
+    #     thread = HashThread(threadID, tName, workQueue)
+    #     thread.start()
+    #     threads.append(thread)
+    #     threadID += 1
+    #
+    # # Fill the queue
+    # queueLock.acquire()
+    # for word in nameList:
+    #     workQueue.put(word)
+    # queueLock.release()
+    #
+    # e1 = cv2.getTickCount()
+    # # Wait for queue to empty
+    # while not workQueue.empty():
+    #     pass
+    #
+    # # Notify threads it's time to exit
+    # exitFlag = 1
+    #
+    # # Wait for all threads to complete
+    # for t in threads:
+    #     t.join()
+    #
+    # e2 = cv2.getTickCount()
+    # time = (e2 - e1) / cv2.getTickFrequency()
+    # print("Time: %s s" % (time))
+    #
+    # print("Exiting Main Thread")
