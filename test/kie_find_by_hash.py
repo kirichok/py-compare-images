@@ -1,4 +1,4 @@
-import Queue
+import queue
 import threading
 import cv2
 import glob
@@ -9,9 +9,11 @@ import time
 import kie_mysql as sql
 import kie_image as image
 
+import os, os.path
+
 HASH_PATH = '../images/hash/'
 KP_EXT = '.kp'
-DES_EXT = '.des.jpg'
+DES_EXT = '.png'
 
 THREAD_COUNT = 200
 exitFlag = 0
@@ -24,7 +26,7 @@ class HashThread(threading.Thread):
         self.q = q
 
     def run(self):
-        print "Starting " + self.name
+        print("Starting " + self.name)
         queueLock.acquire()
         des1 = des.copy()
         queueLock.release()
@@ -39,11 +41,11 @@ class HashThread(threading.Thread):
 
                 m = image.match(des1, np.asarray(des2, np.float32))
                 if len(m) >= 50:
-                    print "Matched %s file %s" % (len(m), name)
+                    print("Matched %s file %s" % (len(m), name))
             else:
                 queueLock.release()
 
-        print "Exiting " + self.name
+        print("Exiting " + self.name)
 
 img = image.loadImageFromPath('../images/M6.jpg', cv2.IMREAD_GRAYSCALE, True, 200)
 kp, des = image.getKpDes(img)
@@ -55,17 +57,22 @@ while count < THREAD_COUNT:
     count += 1
 
 nameList = []
-for imagePath in glob.glob("../images/hash/*.des.jpg"):
-    nameList.append(imagePath)
+folder = 1
+path = "%s*%s/" % (HASH_PATH, folder)
+while os.path.exists(path):
+    for imagePath in glob.glob("%s*%s" % (path, DES_EXT)):
+        nameList.append(imagePath)
+    folder += 1
+    path = "%s*%s/" % (HASH_PATH, folder)
 
 
 if len(nameList) == 0:
     exit(0)
 else:
-    print "Files count: %d " % len(nameList)
+    print("Files count: %d " % len(nameList))
 
 queueLock = threading.Lock()
-workQueue = Queue.Queue(1000000)
+workQueue = queue.Queue(1000000)
 threads = []
 threadID = 1
 
@@ -96,6 +103,6 @@ for t in threads:
 
 e2 = cv2.getTickCount()
 time = (e2 - e1) / cv2.getTickFrequency()
-print "Time: %s s" % (time)
+print("Time: %s s" % (time))
 
-print "Exiting Main Thread"
+print("Exiting Main Thread")
