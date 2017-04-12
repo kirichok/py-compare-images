@@ -114,12 +114,14 @@ queueLock.acquire()
 _folder = 0
 i = 0
 for word in nameList:
+    if i == 0:
+        os.makedirs('%s%s/' % (HASH_PATH, _folder))
     workQueue.put({'url': word, 'f': _folder})
     i += 1
     if i == 1000:
         i = 0
         _folder += 1
-        os.makedirs('%s%s/' % (HASH_PATH, _folder))
+
 queueLock.release()
 
 e1 = cv2.getTickCount()
