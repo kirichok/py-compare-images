@@ -11,7 +11,6 @@ import kie_image as image
 HASH_PATH = '../images/hash/'
 KPC_EXT = '.kpc'
 
-gl = {'folder': 0}
 THREAD_COUNT = 200
 exitFlag = 0
 
@@ -22,8 +21,6 @@ class HashThread(threading.Thread):
         self.threadID = threadID
         self.name = name
         self.q = q
-        self.folder = 0
-        self.newpath = '%s%s/' % (HASH_PATH, self.folder)
 
     def run(self):
         print("Starting " + self.name)
@@ -31,21 +28,22 @@ class HashThread(threading.Thread):
         while not exitFlag:
             queueLock.acquire()
             if not workQueue.empty():
-                url = self.q.get()
-
-                if self.folder > gl['folder']:
-                    gl['folder'] = self.folder
-                    self.newpath = '%s%s/' % (HASH_PATH, self.folder)
-
-                if os.path.exists(self.newpath):
-                    if len([name for name in os.listdir(self.newpath)]) >= 2000:
-                        self.folder += 1
-                        gl['folder'] = self.folder
-                        print('new folder: %s' % self.folder)
-                        self.newpath = '%s%s/' % (HASH_PATH, self.folder)
-                        os.makedirs(self.newpath)
-                else:
-                    os.makedirs(self.newpath)
+                data = self.q.get()
+                url = data['url']
+                folder = '%s%s/' % (HASH_PATH, data['f'])
+                # if self.folder > gl['folder']:
+                #     gl['folder'] = self.folder
+                #     self.newpath = '%s%s/' % (HASH_PATH, self.folder)
+                #
+                # if os.path.exists(self.newpath):
+                #     if len([name for name in os.listdir(self.newpath)]) >= 2000:
+                #         self.folder += 1
+                #         gl['folder'] = self.folder
+                #         print('new folder: %s' % self.folder)
+                #         self.newpath = '%s%s/' % (HASH_PATH, self.folder)
+                #         os.makedirs(self.newpath)
+                # else:
+                #     os.makedirs(self.newpath)
 
                 queueLock.release()
                 # fn = currQueue['fn']
@@ -62,7 +60,7 @@ class HashThread(threading.Thread):
 
                 img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
                 name = image.fileName(url)
-                image.keypointDesCalc(img, self.newpath + name)
+                image.keypointDesCalc(img, folder + name)
 
 
                 # image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
@@ -113,8 +111,14 @@ for tName in threadList:
 # queueLock.release()
 
 queueLock.acquire()
+_folder = 0
+i = 0
 for word in nameList:
-    workQueue.put(word)
+    workQueue.put({'url': word, 'f': _folder})
+    i += 1
+    if i == 1000:
+        _folder += 1
+        os.makedirs('%s%s/' % (HASH_PATH, _folder))
 queueLock.release()
 
 e1 = cv2.getTickCount()
