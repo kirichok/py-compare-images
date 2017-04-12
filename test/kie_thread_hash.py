@@ -38,9 +38,10 @@ class HashThread(threading.Thread):
                     self.newpath = '%s%s/' % (HASH_PATH, self.folder)
 
                 if os.path.exists(self.newpath):
-                    if len([name for name in os.listdir(self.newpath)]) == 2000:
+                    if len([name for name in os.listdir(self.newpath)]) >= 2000:
                         self.folder += 1
                         gl['folder'] = self.folder
+                        print('new folder: %s' % self.folder)
                         self.newpath = '%s%s/' % (HASH_PATH, self.folder)
                         os.makedirs(self.newpath)
                 else:
