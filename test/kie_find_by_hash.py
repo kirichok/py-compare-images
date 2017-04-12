@@ -35,7 +35,7 @@ class HashThread(threading.Thread):
         while not exitFlag:
             self.lock.acquire()
             if not self.workQueue.empty():
-                path = self.q.get()
+                path = self.workQueue.get()
                 self.lock.release()
 
                 des2 = image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False)
@@ -132,11 +132,11 @@ if __name__ == '__main__':
     args = vars(ap.parse_args())
 
     e1 = cv2.getTickCount()
-    check(args['image'], args['threads'])
+    f = check(args['image'], args['threads'])
     e2 = cv2.getTickCount()
     time = (e2 - e1) / cv2.getTickFrequency()
     print("Time: %s s" % (time))
-
+    print("Finds: %s" % f)
     print("Exiting Main Thread")
 
 
