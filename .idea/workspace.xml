@@ -35,9 +35,11 @@
       <file leaf-file-name="kie_image.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/test/kie_image.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="112">
-              <caret line="7" column="17" lean-forward="false" selection-start-line="7" selection-start-column="17" selection-end-line="7" selection-end-column="17" />
-              <folding />
+            <state relative-caret-position="176">
+              <caret line="11" column="0" lean-forward="true" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#31#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -142,6 +144,7 @@
       <find>THREAD_COUNT</find>
       <find>Queue</find>
       <find>print</find>
+      <find>maxwell_gen</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -920,9 +923,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/test/kie_image.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="112">
-          <caret line="7" column="17" lean-forward="false" selection-start-line="7" selection-start-column="17" selection-end-line="7" selection-end-column="17" />
-          <folding />
+        <state relative-caret-position="176">
+          <caret line="11" column="0" lean-forward="true" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
