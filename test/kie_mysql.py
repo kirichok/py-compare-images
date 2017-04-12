@@ -1,4 +1,4 @@
-import pymysql.cursors as msc
+import pymysql as msc
 
 
 def connect():
