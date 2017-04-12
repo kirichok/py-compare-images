@@ -30,27 +30,16 @@ class HashThread(threading.Thread):
             if not workQueue.empty():
                 currQueue = self.q.get()
                 queueLock.release()
-                # fn = currQueue['fn']
-                # urls = currQueue['urls']
-                # kps = []
-                # for url in urls:
-                #     img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
-                #     name = image.fileName(url)
-                #     kp, des = image.keypointDesCalc(img)
-                #     kps.append(image.pack(kp, des, name))
-                #     time.sleep(0)
-                # image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
-
                 fn = currQueue['fn']
                 urls = currQueue['urls']
                 kps = []
                 for url in urls:
                     img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
                     name = image.fileName(url)
-                    image.keypointDesCalc(img, HASH_PATH + name)
-
-
-                # image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
+                    kp, des = image.keypointDesCalc(img)
+                    kps.append(image.pack(kp, des, name))
+                    time.sleep(0)
+                image.saveKps(kps, HASH_PATH + fn + KPC_EXT)
             else:
                 queueLock.release()
 
@@ -81,24 +70,19 @@ for tName in threadList:
     threadID += 1
 
 # Fill the queue
-# queueLock.acquire()
-# tasks = []
-# i = 0
-# hc = 0
-# for word in nameList:
-#     tasks.append(word)
-#     i += 1
-#     if i == 100:
-#         queue = {'fn': 'HASH %d' % hc, 'urls': list(tasks)}
-#         workQueue.put(queue)
-#         hc += 1
-#         i = 0
-#         tasks = []
-# queueLock.release()
-
 queueLock.acquire()
+tasks = []
+i = 0
+hc = 0
 for word in nameList:
-    workQueue.put(word)
+    tasks.append(word)
+    i += 1
+    if i == 100:
+        queue = {'fn': 'HASH %d' % hc, 'urls': list(tasks)}
+        workQueue.put(queue)
+        hc += 1
+        i = 0
+        tasks = []
 queueLock.release()
 
 e1 = cv2.getTickCount()
