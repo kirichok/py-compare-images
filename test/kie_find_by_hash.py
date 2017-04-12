@@ -40,7 +40,7 @@ class HashThread(threading.Thread):
 
                 des2 = image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False)
                 des2 = np.asarray(des2, np.float32)
-                if len(des2) >= 2:
+                if des2 and len(des2) >= 2:
                     name = image.fileName(path)
                     m = image.match(self.des, des2)
                     if len(m) >= 50:
@@ -76,7 +76,6 @@ def check(imgPath, threadsCount=200):
             nameList.append(imagePath)
         folder += 1
         path = "%s%s/" % (HASH_PATH, folder)
-        print(folder)
 
     if len(nameList) == 0:
         print("Files count is empty")
@@ -116,15 +115,6 @@ def check(imgPath, threadsCount=200):
         return finds
 
 
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count", default=50)
@@ -138,7 +128,6 @@ if __name__ == '__main__':
     print("Time: %s s" % (time))
     print("Finds: %s" % f)
     print("Exiting Main Thread")
-
 
     # img = image.loadImageFromPath(args['image'], cv2.IMREAD_GRAYSCALE, True, 200)
     # kp, des = image.getKpDes(img)
