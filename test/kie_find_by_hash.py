@@ -70,6 +70,7 @@ while os.path.exists(path):
         nameList.append(imagePath)
     folder += 1
     path = "%s*%s/" % (HASH_PATH, folder)
+    print(folder)
 
 
 if len(nameList) == 0:
