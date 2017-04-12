@@ -117,6 +117,7 @@ for word in nameList:
     workQueue.put({'url': word, 'f': _folder})
     i += 1
     if i == 1000:
+        i = 0
         _folder += 1
         os.makedirs('%s%s/' % (HASH_PATH, _folder))
 queueLock.release()
