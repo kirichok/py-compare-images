@@ -37,11 +37,12 @@ class HashThread(threading.Thread):
                 queueLock.release()
 
                 des2 = image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False)
-                name = image.fileName(path)
-
-                m = image.match(des1, np.asarray(des2, np.float32))
-                if len(m) >= 50:
-                    print("Matched %s file %s" % (len(m), name))
+                des2 = np.asarray(des2, np.float32)
+                if len(des2) >= 2:
+                    name = image.fileName(path)
+                    m = image.match(des1, des2)
+                    if len(m) >= 50:
+                        print("Matched %s file %s" % (len(m), name))
             else:
                 queueLock.release()
 
