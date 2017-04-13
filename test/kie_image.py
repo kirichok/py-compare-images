@@ -8,8 +8,6 @@ from os.path import basename, splitext
 import cPickle
 import zlib
 
-from scipy.stats._continuous_distns import maxwell_gen
-
 KP_EXT = '.kp'
 DES_EXT = '.png'
 

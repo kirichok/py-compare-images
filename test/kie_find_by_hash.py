@@ -8,7 +8,7 @@ import argparse
 import os
 
 HASH_PATH = '../images/hash/'
-DES_EXT = '.jpg.des'
+DES_EXT = '.des.jpg'
 
 exitFlag = 0
 
@@ -88,6 +88,7 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200):
         # Create new threads
         for tName in threadList:
             thread = HashThread(threadID, tName, queueLock, workQueue, kp, des, finds)
+            thread.daemon=True
             thread.start()
             threads.append(thread)
             threadID += 1
@@ -113,11 +114,20 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200):
 
 
 if __name__ == '__main__':
+    def str2bool(v):
+        if v.lower() in ("yes", "true", "t", "y" "1"):
+            return True
+        if v.lower() in ("no", "false", "f", "n" "0"):
+            return False
+        else:
+            raise argparse.ArgumentTypeError('Boolean value expected.')
+
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count", default=50)
     ap.add_argument("-i", "--image", required=True, help="Path to the image")
-    ap.add_argument("-sf", "--subfolder", required=True, type=bool, help="Check sub folder", default=True)
+    ap.add_argument("-sf", "--subfolder", required=True, type=str2bool, help="Check sub folder", nargs='?', const=True)
     ap.add_argument("-hf", "--hash", required=True, help="Path to the hash folder", default=HASH_PATH)
+    ap.add_argument("-ext", "--extention", help="Hash files extentions", default=DES_EXT)
     args = vars(ap.parse_args())
 
     e1 = cv2.getTickCount()
