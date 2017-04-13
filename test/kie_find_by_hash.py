@@ -6,14 +6,15 @@ import numpy as np
 import kie_image as image
 import argparse
 import os
+import time
 
 HASH_PATH = '../images/hash/'
 DES_EXT = '.des.jpg'
 
-exitFlag = 0
+threading.stack_size(64*1024)
 
 class HashThread(threading.Thread):
-    def __init__(self, threadID, name, lock, workQueue, kp, des, finds):
+    def __init__(self, threadID, name, event, lock, workQueue, kp, des, finds):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
@@ -22,16 +23,17 @@ class HashThread(threading.Thread):
         self.kp = kp
         self.des = des
         self.finds = finds
+        self.event = event
 
     def run(self):
-        global exitFlag
-        # print("Starting " + self.name)
-        while not exitFlag:
+        i = 0
+        print("Starting " + self.name)
+        while not self.event.is_set():
             self.lock.acquire()
             if not self.workQueue.empty():
                 path = self.workQueue.get()
                 self.lock.release()
-
+                i += 1
                 des2 = image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False)
                 des2 = np.asarray(des2, np.float32)
                 if isinstance(des2, list) and len(des2) >= 2:
@@ -42,17 +44,15 @@ class HashThread(threading.Thread):
                         self.finds.append({'m': len(m), 'n': name})
                         self.lock.release()
                         print("Matched %s file %s" % (len(m), name))
+                    # time.sleep(2)
             else:
                 self.lock.release()
 
-        # print("Exiting " + self.name)
+        print("Exiting %s - %d" % (self.name, i))
 
 
 def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ext=DES_EXT):
-    global exitFlag
-
     finds = []
-    exitFlag = 0
     img = image.loadImageFromPath(imgPath, cv2.IMREAD_GRAYSCALE, True, 200)
     kp, des = image.getKpDes(img)
 
@@ -75,12 +75,15 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ex
     else:
         for imagePath in glob.glob("%s*%s" % (hashPath, ext)):
             nameList.append(imagePath)
+            # if len(nameList) == 50000:
+            #     break
 
     if len(nameList) == 0:
         print("Hash files count is empty")
     else:
         print("Files count: %d " % len(nameList))
 
+        event = threading.Event()
         queueLock = threading.Lock()
         workQueue = Queue.Queue(1000000)
         threads = []
@@ -88,7 +91,7 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ex
 
         # Create new threads
         for tName in threadList:
-            thread = HashThread(threadID, tName, queueLock, workQueue, kp, des, finds)
+            thread = HashThread(threadID, tName, event, queueLock, workQueue, kp, des, finds)
             thread.daemon=True
             thread.start()
             threads.append(thread)
@@ -105,7 +108,7 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ex
             pass
 
         # Notify threads it's time to exit
-        exitFlag = 1
+        event.set()
 
         # Wait for all threads to complete
         for t in threads:
