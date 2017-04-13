@@ -125,8 +125,8 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count", default=50)
     ap.add_argument("-i", "--image", required=True, help="Path to the image")
-    ap.add_argument("-sf", "--subfolder", required=True, type=str2bool, help="Check sub folder", nargs='?', const=True)
     ap.add_argument("-hf", "--hash", required=True, help="Path to the hash folder", default=HASH_PATH)
+    ap.add_argument("-sf", "--subfolder", type=str2bool, help="Check sub folder", nargs='?', const=True)
     ap.add_argument("-ext", "--extention", help="Hash files extentions", default=DES_EXT)
     args = vars(ap.parse_args())
 
