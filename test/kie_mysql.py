@@ -1,5 +1,5 @@
-import mysql.connector as msc
-
+# import mysql.connector as msc
+import pymysql.cursors as msc
 
 def connect():
     _cnx = msc.connect(user='root', password='C0mic$toR3',
