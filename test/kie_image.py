@@ -9,7 +9,7 @@ import cPickle
 import zlib
 
 KP_EXT = '.kp'
-DES_EXT = '.png'
+DES_EXT = '.des.jpg'
 
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
     resp = urllib.urlopen(url)
@@ -43,9 +43,9 @@ def __getDeltaTransformation(image, maxSize):
 def keypointDesCalc(image, savePath=''):
     kp, des = sift.detectAndCompute(image, None)
     if savePath:
-        saveKpDesToPath(kp, des, savePath + KP_EXT)
-        # saveKeypointToPath(kp, savePath + KP_EXT)
-        # saveDesToPath(des, savePath + DES_EXT)
+        # saveKpDesToPath(kp, des, savePath + KP_EXT)
+        saveKeypointToPath(kp, savePath + KP_EXT)
+        saveDesToPath(des, savePath + DES_EXT)
     return kp, des
 
 
@@ -84,7 +84,7 @@ def saveKeypointToPath(kp, path):
         temp = (point.pt, point.size, point.angle, point.response, point.octave,
                 point.class_id)
         index.append(temp)
-    f = open(path, "wb")
+    f = open(path, "w")
     f.write(cPickle.dumps(index))
     f.close()
 
