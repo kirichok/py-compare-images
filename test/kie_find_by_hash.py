@@ -48,7 +48,7 @@ class HashThread(threading.Thread):
         # print("Exiting " + self.name)
 
 
-def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200):
+def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ext=DES_EXT):
     global exitFlag
 
     finds = []
@@ -67,12 +67,12 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200):
         folder = 1
         path = "%s%s/" % (hashPath, folder)
         while os.path.exists(path):
-            for imagePath in glob.glob("%s*%s" % (path, DES_EXT)):
+            for imagePath in glob.glob("%s*%s" % (path, ext)):
                 nameList.append(imagePath)
             folder += 1
             path = "%s%s/" % (hashPath, folder)
     else:
-        for imagePath in glob.glob("%s*%s" % (hashPath, DES_EXT)):
+        for imagePath in glob.glob("%s*%s" % (hashPath, ext)):
             nameList.append(imagePath)
 
     if len(nameList) == 0:
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     args = vars(ap.parse_args())
 
     e1 = cv2.getTickCount()
-    f = check(args['image'], args['hash'], args['subfolder'], args['threads'])
+    f = check(args['image'], args['hash'], args['subfolder'], args['threads'], args['extention'])
     e2 = cv2.getTickCount()
     time = (e2 - e1) / cv2.getTickFrequency()
     print("Time: %s s" % (time))
