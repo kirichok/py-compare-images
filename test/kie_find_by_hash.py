@@ -66,6 +66,7 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ex
     if withSubFolders:
         folder = 1
         path = "%s%s/" % (hashPath, folder)
+        print(path)
         while os.path.exists(path):
             for imagePath in glob.glob("%s*%s" % (path, ext)):
                 nameList.append(imagePath)
