@@ -11,7 +11,44 @@ import time
 HASH_PATH = '../images/hash/'
 DES_EXT = '.des.jpg'
 
-threading.stack_size(64*1024)
+filesQueue = Queue.Queue(1000000)
+# threading.stack_size(64*1024)
+
+class FilesThread(threading.Thread):
+    def __init__(self, threadID, name, queue, event, lock, files):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.queue = queue
+        self.event = event
+        self.lock = lock
+        self.files = files
+
+    def run(self):
+        # print "Starting " + self.name
+        while not self.event.is_set():
+            self.lock.acquire()
+            if not self.queue.empty():
+                path = self.queue.get()
+                self.lock.release()
+
+                # t1 = cv2.getTickCount()
+                des2 = np.asarray(image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False), np.float32)
+                name = image.fileName(path)
+                # t2 = cv2.getTickCount()
+
+                if len(des2) >= 2:
+                    self.lock.acquire()
+                    self.files.put({'n': name, 'd': des2})
+                    self.lock.release()
+
+                    # t3 = cv2.getTickCount()
+                    # time = (e2 - e1) / cv2.getTickFrequency()
+                    # print "R: %s s P: %s s" % ((t2 - t1) / cv2.getTickFrequency(), (t3 - t2) / cv2.getTickFrequency())
+            else:
+                self.lock.release()
+                # print "Exiting " + self.name
+
 
 class HashThread(threading.Thread):
     def __init__(self, threadID, name, event, lock, workQueue, kp, des, finds):
@@ -36,7 +73,7 @@ class HashThread(threading.Thread):
                 i += 1
                 des2 = image.loadImageFromPath(path, cv2.IMREAD_GRAYSCALE, False)
                 des2 = np.asarray(des2, np.float32)
-                if isinstance(des2, list) and len(des2) >= 2:
+                if len(des2) >= 2:
                     name = image.fileName(path)
                     m = image.match(self.des, des2)
                     if len(m) >= 50:
@@ -44,11 +81,71 @@ class HashThread(threading.Thread):
                         self.finds.append({'m': len(m), 'n': name})
                         self.lock.release()
                         print("Matched %s file %s" % (len(m), name))
-                    # time.sleep(2)
+                        # time.sleep(2)
             else:
                 self.lock.release()
 
         print("Exiting %s - %d" % (self.name, i))
+
+
+def loadHashFiles(hashPath=HASH_PATH, withSubFolders=True, threadsCount=50, ext=DES_EXT):
+    threadList = []
+    count = 0
+    while count < threadsCount:
+        threadList.append("FilesThread-%d" % count)
+        count += 1
+
+    nameList = []
+    if withSubFolders:
+        folder = 1
+        path = "%s%s/" % (hashPath, folder)
+        print(path)
+        while os.path.exists(path):
+            for imagePath in glob.glob("%s*%s" % (path, ext)):
+                nameList.append(imagePath)
+            folder += 1
+            path = "%s%s/" % (hashPath, folder)
+    else:
+        for imagePath in glob.glob("%s*%s" % (hashPath, ext)):
+            nameList.append(imagePath)
+            # if len(nameList) == 50000:
+            #     break
+
+    if len(nameList) == 0:
+        print("Hash files count is empty")
+    else:
+        print("Files count: %d " % len(nameList))
+
+        event = threading.Event()
+        queueLock = threading.Lock()
+        workQueue = Queue.Queue(1000000)
+        threads = []
+        threadID = 1
+
+        # Create new threads
+        for tName in threadList:
+            thread = FilesThread(threadID, tName, workQueue, event, queueLock, filesQueue)
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+            threadID += 1
+
+        # Fill the queue
+        queueLock.acquire()
+        for word in nameList:
+            workQueue.put(word)
+        queueLock.release()
+
+        # Wait for queue to empty
+        while not workQueue.empty():
+            pass
+
+        # Notify threads it's time to exit
+        event.set()
+
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
 
 
 def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ext=DES_EXT):
@@ -92,7 +189,7 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ex
         # Create new threads
         for tName in threadList:
             thread = HashThread(threadID, tName, event, queueLock, workQueue, kp, des, finds)
-            thread.daemon=True
+            thread.daemon = True
             thread.start()
             threads.append(thread)
             threadID += 1
@@ -126,18 +223,20 @@ if __name__ == '__main__':
         else:
             raise argparse.ArgumentTypeError('Boolean value expected.')
 
+
     ap = argparse.ArgumentParser()
     ap.add_argument("-t", "--threads", required=True, type=int, help="Threads count", default=50)
-    ap.add_argument("-i", "--image", required=True, help="Path to the image")
+    # ap.add_argument("-i", "--image", required=True, help="Path to the image")
     ap.add_argument("-hf", "--hash", required=True, help="Path to the hash folder", default=HASH_PATH)
     ap.add_argument("-sf", "--subfolder", type=str2bool, help="Check sub folder", nargs='?', const=True)
     ap.add_argument("-ext", "--extention", help="Hash files extentions", default=DES_EXT)
     args = vars(ap.parse_args())
 
     e1 = cv2.getTickCount()
-    f = check(args['image'], args['hash'], args['subfolder'], args['threads'], args['extention'])
+    # f = check(args['image'], args['hash'], args['subfolder'], args['threads'], args['extention'])
+    loadHashFiles(args['hash'], args['subfolder'], args['threads'], args['extention'])
     e2 = cv2.getTickCount()
     time = (e2 - e1) / cv2.getTickFrequency()
     print("Time: %s s" % (time))
-    print("Finds: %s" % f)
+    # print("Finds: %s" % f)
     print("Exiting Main Thread")
