@@ -40,7 +40,7 @@ class FilesThread(threading.Thread):
                 if len(des2) >= 2:
                     self.lock.acquire()
                     self.files.put({'n': name, 'd': des2})
-                    print("Files Loaded: %s" % self.files.dsize())
+                    print("Files Loaded: %s" % self.files.qsize())
                     self.lock.release()
 
                     # t3 = cv2.getTickCount()
