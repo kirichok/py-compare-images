@@ -11,7 +11,7 @@ import time
 HASH_PATH = '../images/hash/'
 DES_EXT = '.des.jpg'
 
-filesQueue = Queue.Queue(1000000)
+files = []
 threading.stack_size(64*1024)
 
 class FilesThread(threading.Thread):
@@ -39,8 +39,7 @@ class FilesThread(threading.Thread):
 
                 if len(des2) >= 2:
                     self.lock.acquire()
-                    self.files.put({'n': name, 'd': des2})
-                    print("Files Loaded: %s" % self.files.qsize())
+                    self.files.append({'n': name, 'd': des2})
                     self.lock.release()
 
                     # t3 = cv2.getTickCount()
@@ -49,6 +48,39 @@ class FilesThread(threading.Thread):
             else:
                 self.lock.release()
                 # print "Exiting " + self.name
+
+
+class RamThread(threading.Thread):
+    def __init__(self, threadID, name, event, lock, workQueue, kp, des, finds):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.workQueue = workQueue
+        self.lock = lock
+        self.kp = kp
+        self.des = des
+        self.finds = finds
+        self.event = event
+
+    def run(self):
+        while not self.event.is_set():
+            self.lock.acquire()
+            if not self.workQueue.empty():
+                i = self.workQueue.get()
+                data = files[i]
+                self.lock.release()
+
+                des2 = data['d']
+                name = data['n']
+                if len(des2) >= 2:
+                    m = image.match(self.des, des2)
+                    if len(m) >= 50:
+                        self.lock.acquire()
+                        self.finds.append({'m': len(m), 'n': name})
+                        self.lock.release()
+                        print("Matched %s file %s" % (len(m), name))
+            else:
+                self.lock.release()
 
 
 class HashThread(threading.Thread):
@@ -98,19 +130,22 @@ def loadHashFiles(hashPath=HASH_PATH, withSubFolders=True, threadsCount=50, ext=
 
     nameList = []
     if withSubFolders:
-        folder = 1
+        folder = 0
         path = "%s%s/" % (hashPath, folder)
         print(path)
         while os.path.exists(path):
             for imagePath in glob.glob("%s*%s" % (path, ext)):
                 nameList.append(imagePath)
+                if len(nameList) == 50000:
+                    folder = -2
+                    break
             folder += 1
             path = "%s%s/" % (hashPath, folder)
     else:
         for imagePath in glob.glob("%s*%s" % (hashPath, ext)):
             nameList.append(imagePath)
-            # if len(nameList) == 50000:
-            #     break
+            if len(nameList) == 50000:
+                break
 
     if len(nameList) == 0:
         print("Hash files count is empty")
@@ -125,7 +160,7 @@ def loadHashFiles(hashPath=HASH_PATH, withSubFolders=True, threadsCount=50, ext=
 
         # Create new threads
         for tName in threadList:
-            thread = FilesThread(threadID, tName, workQueue, event, queueLock, filesQueue)
+            thread = FilesThread(threadID, tName, workQueue, event, queueLock, files)
             thread.daemon = True
             thread.start()
             threads.append(thread)
@@ -149,6 +184,56 @@ def loadHashFiles(hashPath=HASH_PATH, withSubFolders=True, threadsCount=50, ext=
             t.join()
 
 
+def checkFromRAM(imgPath, threadsCount=200):
+    finds = []
+    img = image.loadImageFromPath(imgPath, cv2.IMREAD_GRAYSCALE, True, 200)
+    kp, des = image.getKpDes(img)
+
+    threadList = []
+    count = 0
+    while count < threadsCount:
+        threadList.append("Thread-%d" % count)
+        count += 1
+
+    if len(files) == 0:
+        print("Hash files count is empty")
+    else:
+        print("Files count: %d " % len(files))
+
+        event = threading.Event()
+        queueLock = threading.Lock()
+        workQueue = Queue.Queue(len(files)+10)
+        threads = []
+        threadID = 1
+
+        # Create new threads
+        for tName in threadList:
+            thread = RamThread(threadID, tName, event, queueLock, workQueue, kp, des, finds)
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+            threadID += 1
+
+        # Fill the queue
+        queueLock.acquire()
+        for i in range(0, len(files)-1):
+            workQueue.put(i)
+        queueLock.release()
+
+        # Wait for queue to empty
+        while not workQueue.empty():
+            pass
+
+        # Notify threads it's time to exit
+        event.set()
+
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
+
+        return finds
+
+
 def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ext=DES_EXT):
     finds = []
     img = image.loadImageFromPath(imgPath, cv2.IMREAD_GRAYSCALE, True, 200)
@@ -168,6 +253,8 @@ def check(imgPath, hashPath=HASH_PATH, withSubFolders=True, threadsCount=200, ex
         while os.path.exists(path):
             for imagePath in glob.glob("%s*%s" % (path, ext)):
                 nameList.append(imagePath)
+                if len(nameList) == 50000:
+                    break
             folder += 1
             path = "%s%s/" % (hashPath, folder)
     else:

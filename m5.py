@@ -42,8 +42,8 @@ e1 = cv2.getTickCount()
 MIN_MATCH_COUNT = 100
 PATH = './images/'
 
-fn1 = 'z1.jpg'
-fn2 = 'z2.jpg'
+fn1 = '1/1_200.jpg'
+fn2 = '1/1_200.jpg'
 
 t_start = cv2.getTickCount()
 img1 = cv2.imread(PATH + fn1, 0)  # queryImage
@@ -68,22 +68,22 @@ print "Time loading 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 sift = cv2.xfeatures2d.SIFT_create()
 
 # find the keypoints and descriptors with SIFT
-t_start = cv2.getTickCount()
+# t_start = cv2.getTickCount()
 kp1, des1 = sift.detectAndCompute(img1, None)
 
-print "Time keypoint len: %s" % len(kp1)
-im.saveKpDesToPath(kp1, des1, PATH + im.fileName(fn1) + '.kp.png')
+# print "Time keypoint len: %s" % len(kp1)
+# im.saveKpDesToPath(kp1, des1, PATH + im.fileName(fn1) + '.kp.png')
 # im.saveKeypointToPath(kp1, PATH + im.fileName(fn1) + '.kp')
 # im.saveDesToPath(des1, PATH + im.fileName(fn1) + '.des.png')
-t_end = cv2.getTickCount()
-print "Time keypoint 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
-t_start = cv2.getTickCount()
+# t_end = cv2.getTickCount()
+# print "Time keypoint 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
+# t_start = cv2.getTickCount()
 kp2, des2 = sift.detectAndCompute(img2, None)
-im.saveKpDesToPath(kp2, des2, PATH + im.fileName(fn2) + '.kp.png')
+# im.saveKpDesToPath(kp2, des2, PATH + im.fileName(fn2) + '.kp.png')
 # im.saveKeypointToPath(kp2, PATH + im.fileName(fn2) + '.kp')
 # im.saveDesToPath(des2, PATH + im.fileName(fn2) + '.des.png')
-t_end = cv2.getTickCount()
-print "Time keypoint 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
+# t_end = cv2.getTickCount()
+# print "Time keypoint 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
 
 FLANN_INDEX_KDTREE = 0
