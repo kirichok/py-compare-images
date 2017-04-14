@@ -12,7 +12,7 @@ HASH_PATH = '../images/hash/'
 DES_EXT = '.des.jpg'
 
 filesQueue = Queue.Queue(1000000)
-# threading.stack_size(64*1024)
+threading.stack_size(64*1024)
 
 class FilesThread(threading.Thread):
     def __init__(self, threadID, name, queue, event, lock, files):
@@ -40,6 +40,7 @@ class FilesThread(threading.Thread):
                 if len(des2) >= 2:
                     self.lock.acquire()
                     self.files.put({'n': name, 'd': des2})
+                    print("Files Loaded: %s" % self.files.dsize())
                     self.lock.release()
 
                     # t3 = cv2.getTickCount()
