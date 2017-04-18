@@ -31,7 +31,7 @@ class HashThread(threading.Thread):
 
                 img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, False)
                 name = image.fileName(url)
-                image.keypointDesCalc(img, folder + name, True)
+                image.keypointDesCalc(img, folder + name, 100)
             else:
                 queueLock.release()
 
