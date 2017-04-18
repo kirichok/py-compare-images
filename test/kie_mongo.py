@@ -12,7 +12,7 @@ def connect(_db, _collection):
 
 
 def insert(collection, data):
-    collection.insert(data, { ordered: False })
+    collection.save(data)
 
 
 def getFile(collection, name):
