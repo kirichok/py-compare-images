@@ -10,7 +10,7 @@ import zlib
 from operator import itemgetter
 
 KP_EXT = '.kp'
-DES_EXT = '.des.jpg'
+DES_EXT = '.jpg'
 
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
     resp = urllib.urlopen(url)

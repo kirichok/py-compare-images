@@ -7,7 +7,7 @@ import kie_image as image
 
 HASH_PATH = '../images/hash/'
 
-THREAD_COUNT = 200
+THREAD_COUNT = 50
 exitFlag = 0
 
 
@@ -29,9 +29,9 @@ class HashThread(threading.Thread):
                 folder = '%s%s/' % (HASH_PATH, data['f'])
                 queueLock.release()
 
-                img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, True, 200)
+                img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, False)
                 name = image.fileName(url)
-                image.keypointDesCalc(img, folder + name)
+                image.keypointDesCalc(img, folder + name, True)
             else:
                 queueLock.release()
 
