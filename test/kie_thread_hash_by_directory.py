@@ -7,7 +7,7 @@ import kie_image as image
 
 HASH_PATH = '../images/hash/'
 
-THREAD_COUNT = 10
+THREAD_COUNT = 50
 exitFlag = 0
 
 
