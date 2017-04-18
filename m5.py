@@ -6,9 +6,33 @@ import urllib
 import math
 import test.kie_image as im
 
+from operator import itemgetter, attrgetter
+
 
 # import ntpath
 # head, tail = ntpath.split('http://comicstore.cf/uploads/diamonds/STK368216.jpg')
+
+def sortKp(kp, des):
+    _kp = []
+    i = 0
+    for point in kp:
+        _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
+        i += 1
+
+    _kp = sorted(_kp, key=itemgetter(1), reverse=True)
+
+    r_kp = []
+    r_des = []
+    for point in _kp:
+        temp = cv2.KeyPoint(x=point[0][0], y=point[0][1], _size=point[1], _angle=point[2], _response=point[3],
+                            _octave=point[4], _class_id=point[5])
+        r_des.append(point[6])
+        r_kp.append(temp)
+        if len(r_kp) == 100:
+            break
+
+    return r_kp, np.asarray(r_des, np.float32)
+
 
 # METHOD #1: OpenCV, NumPy, and urllib
 def url_to_image(url):
@@ -42,8 +66,8 @@ e1 = cv2.getTickCount()
 MIN_MATCH_COUNT = 100
 PATH = './images/'
 
-fn1 = '1/1_200.jpg'
-fn2 = '1/1_200.jpg'
+fn1 = 'j1.jpg'
+fn2 = 'M2.jpg'
 
 t_start = cv2.getTickCount()
 img1 = cv2.imread(PATH + fn1, 0)  # queryImage
@@ -60,7 +84,6 @@ img2 = cv2.imread(PATH + fn2, 0)  # trainImage
 t_end = cv2.getTickCount()
 print "Time loading 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
-
 # cv2.imshow("Image", img2)
 # cv2.waitKey(0)
 
@@ -69,19 +92,22 @@ sift = cv2.xfeatures2d.SIFT_create()
 
 # find the keypoints and descriptors with SIFT
 # t_start = cv2.getTickCount()
-kp1, des1 = sift.detectAndCompute(img1, None)
+_kp1, _des1 = sift.detectAndCompute(img1, None)
+kp1, des1 = sortKp(_kp1, _des1)
 
 # print "Time keypoint len: %s" % len(kp1)
 # im.saveKpDesToPath(kp1, des1, PATH + im.fileName(fn1) + '.kp.png')
-# im.saveKeypointToPath(kp1, PATH + im.fileName(fn1) + '.kp')
-# im.saveDesToPath(des1, PATH + im.fileName(fn1) + '.des.png')
+im.saveKeypointToPath(kp1, PATH + im.fileName(fn1) + '.kp')
+im.saveDesToPath(des1, PATH + im.fileName(fn1) + '.des.jpg')
 # t_end = cv2.getTickCount()
 # print "Time keypoint 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 # t_start = cv2.getTickCount()
-kp2, des2 = sift.detectAndCompute(img2, None)
+_kp2, _des2 = sift.detectAndCompute(img2, None)
+kp2, des2 = sortKp(_kp2, _des2)
+
 # im.saveKpDesToPath(kp2, des2, PATH + im.fileName(fn2) + '.kp.png')
-# im.saveKeypointToPath(kp2, PATH + im.fileName(fn2) + '.kp')
-# im.saveDesToPath(des2, PATH + im.fileName(fn2) + '.des.png')
+im.saveKeypointToPath(kp2, PATH + im.fileName(fn2) + '.kp')
+im.saveDesToPath(des2, PATH + im.fileName(fn2) + '.des.jpg')
 # t_end = cv2.getTickCount()
 # print "Time keypoint 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
