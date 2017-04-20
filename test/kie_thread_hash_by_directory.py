@@ -7,7 +7,7 @@ import kie_image as image
 
 HASH_PATH = '../images/hash/'
 
-THREAD_COUNT = 15
+THREAD_COUNT = 6
 exitFlag = 0
 
 
@@ -52,7 +52,7 @@ nameList = sql.allComics()
 if len(nameList) == 0:
     exit(0)
 
-semaphore = threading.BoundedSemaphore(5)
+semaphore = threading.BoundedSemaphore(3)
 queueLock = threading.Lock()
 workQueue = Queue.Queue(1000000)
 threads = []
