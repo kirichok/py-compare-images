@@ -153,8 +153,8 @@ e1 = cv2.getTickCount()
 MIN_MATCH_COUNT = 100
 PATH = './images/'
 
-fn1 = 'j11.jpg'
-fn2 = 'j1.jpg'
+fn1 = 'M7.jpg'
+fn2 = 'M5.jpg'
 
 t_start = cv2.getTickCount()
 img1 = cv2.imread(PATH + fn1, 0)  # queryImage
@@ -249,13 +249,13 @@ draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
 
 img3 = cv2.drawMatches(img1, kp1, img2, kp2, good, None, **draw_params)
 
-img4 = None
-img5 = None
-img4 = cv2.drawKeypoints(img1, kp1, img4, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-img5 = cv2.drawKeypoints(img2, kp2, img5, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+# img4 = None
+# img5 = None
+# img4 = cv2.drawKeypoints(img1, kp1, img4, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+# img5 = cv2.drawKeypoints(img2, kp2, img5, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-cv2.imwrite(PATH + 'j1__.jpg', img4)
-cv2.imwrite(PATH + 'j4__.jpg', img5)
+# cv2.imwrite(PATH + 'j1__.jpg', img4)
+# cv2.imwrite(PATH + 'j4__.jpg', img5)
 
 e2 = cv2.getTickCount()
 time = (e2 - e1) / cv2.getTickFrequency()

@@ -10,7 +10,8 @@ import zlib
 from operator import itemgetter
 
 KP_EXT = '.kp'
-DES_EXT = '.jpg'
+DES_EXT = '.des'
+
 
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
     resp = urllib.urlopen(url)
@@ -20,7 +21,6 @@ def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
         return __getDeltaTransformation(image, maxSize)
     else:
         return image
-    # return resize and __getDeltaTransformation(image, maxSize) or image
 
 
 def loadImageFromPath(path, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
@@ -29,7 +29,6 @@ def loadImageFromPath(path, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800
         return __getDeltaTransformation(image, maxSize)
     else:
         return image
-    # return resize and __getDeltaTransformation(image, maxSize) or image
 
 
 def __getDeltaTransformation(image, maxSize):
@@ -41,10 +40,10 @@ def __getDeltaTransformation(image, maxSize):
     return cv2.resize(image, (math.trunc(width * delta), math.trunc(height * delta)), interpolation=cv2.INTER_CUBIC)
 
 
-def keypointDesCalc(image, savePath='', sort=0):
+def keypointDesCalc(image, savePath='', count=0):
     kp, des = sift.detectAndCompute(image, None)
-    if sort != 0:
-        kp, des = sortKp(kp, des, sort)
+    if count != 0:
+        kp, des = sortKp(kp, des, count)
     if savePath:
         # saveKpDesToPath(kp, des, savePath + KP_EXT)
         saveKeypointToPath(kp, savePath + KP_EXT)
@@ -52,25 +51,8 @@ def keypointDesCalc(image, savePath='', sort=0):
     return kp, des
 
 
-def keypointDesCalcDb(collection, image, name='', sort=0):
-    kp, des = sift.detectAndCompute(image, None)
-    if sort != 0:
-        kp, des = sortKp(kp, des, sort)
-    if name:
-        index = []
-        i = 0
-        for point in kp:
-            temp = (point.pt, point.size, point.angle, point.response, point.octave,
-                    point.class_id)
-            index.append(temp)
-            i += 1
-
-        collection.insert({'name': name, 'kp': index, 'des': des.tolist()})
-    return kp, des
-
-
 def loadKeypointFromPath(path):
-    index = cPickle.loads(open(path).read())
+    index = cPickle.loads(open(path, 'rb').read())
     kp = []
     for point in index:
         temp = cv2.KeyPoint(x=point[0][0], y=point[0][1], _size=point[1], _angle=point[2], _response=point[3],
@@ -79,11 +61,34 @@ def loadKeypointFromPath(path):
     return kp
 
 
+def loadDesFromPath(path):
+    des = cPickle.loads(open(path, 'rb').read())
+    return np.asarray(des, np.float32)
+
+
+def saveKeypointToPath(kp, path):
+    index = []
+    for point in kp:
+        temp = (point.pt, point.size, point.angle, point.response, point.octave,
+                point.class_id)
+        index.append(temp)
+    f = open(path, "wb")
+    f.write(cPickle.dumps(index))
+    f.close()
+
+
+def saveDesToPath(des, path):
+    des = des.tolist()
+    f = open(path, "wb")
+    f.write(cPickle.dumps(des))
+    f.close()
+
+
 def loadKpDesFromPath(path, decompress=True):
     if decompress:
-        index = cPickle.loads(zlib.decompress(open(path).read()))
+        index = cPickle.loads(zlib.decompress(open(path, 'rb').read()))
     else:
-        index = cPickle.loads(open(path).read())
+        index = cPickle.loads(open(path, 'rb').read())
     kp = []
     des = []
     for point in index:
@@ -94,19 +99,9 @@ def loadKpDesFromPath(path, decompress=True):
     return kp, np.array(des)
 
 
-def loadDesFromPath(path):
-    return loadImageFromPath(path, cv2.IMREAD_COLOR, False)
-
-
-def saveKeypointToPath(kp, path):
-    index = []
-    for point in kp:
-        temp = (point.pt, point.size, point.angle, point.response, point.octave,
-                point.class_id)
-        index.append(temp)
-    f = open(path, "w")
-    f.write(cPickle.dumps(index))
-    f.close()
+def saveKps(data, path):
+    f = open(path, "wb")
+    f.write(zlib.compress(cPickle.dumps(data)))
 
 
 def saveKpDesToPath(kp, des, path, compress=True):
@@ -117,7 +112,7 @@ def saveKpDesToPath(kp, des, path, compress=True):
                 point.class_id, des[i])
         index.append(temp)
         i += 1
-    f = open(path, "w")
+    f = open(path, "wb")
     if compress:
         f.write(zlib.compress(cPickle.dumps(index)))
     else:
@@ -125,44 +120,8 @@ def saveKpDesToPath(kp, des, path, compress=True):
     f.close()
 
 
-def pack(kp, des, name, compress=True):
-    data = {'f': name, 'k': [], 'd': des}
-    for point in kp:
-        temp = (point.pt, point.size, point.angle, point.response, point.octave, point.class_id)
-        data['k'].append(temp)
-
-    data = cPickle.dumps(data)
-    if compress:
-        data = zlib.compress(data)
-    return data
-
-
-def unpack(data, decompress=True):
-    if decompress:
-        data = cPickle.loads(zlib.decompress(data))
-    else:
-        data = cPickle.loads(data)
-    kp = []
-    des = data['d']
-    name = data['f']
-    for point in data['k']:
-        temp = cv2.KeyPoint(x=point[0][0], y=point[0][1], _size=point[1], _angle=point[2], _response=point[3],
-                            _octave=point[4], _class_id=point[5])
-        kp.append(temp)
-    return name, kp, np.array(des)
-
-
 def loadKps(path):
-    return cPickle.loads(zlib.decompress(open(path).read()))
-
-
-def saveKps(data, path):
-    f = open(path, "wb")
-    f.write(zlib.compress(cPickle.dumps(data)))
-
-
-def saveDesToPath(des, path):
-    cv2.imwrite(path, des)
+    return cPickle.loads(zlib.decompress(open(path, 'rb').read()))
 
 
 def match(des1, des2):
@@ -209,6 +168,50 @@ def sortKp(kp, des, count):
             break
 
     return r_kp, np.asarray(r_des, np.float32)
+
+
+def keypointDesCalcDb(collection, image, name='', sort=0):
+    kp, des = sift.detectAndCompute(image, None)
+    if sort != 0:
+        kp, des = sortKp(kp, des, sort)
+    if name:
+        index = []
+        i = 0
+        for point in kp:
+            temp = (point.pt, point.size, point.angle, point.response, point.octave,
+                    point.class_id)
+            index.append(temp)
+            i += 1
+
+        collection.insert({'name': name, 'kp': index, 'des': des.tolist()})
+    return kp, des
+
+
+def pack(kp, des, name, compress=True):
+    data = {'f': name, 'k': [], 'd': des}
+    for point in kp:
+        temp = (point.pt, point.size, point.angle, point.response, point.octave, point.class_id)
+        data['k'].append(temp)
+
+    data = cPickle.dumps(data)
+    if compress:
+        data = zlib.compress(data)
+    return data
+
+
+def unpack(data, decompress=True):
+    if decompress:
+        data = cPickle.loads(zlib.decompress(data))
+    else:
+        data = cPickle.loads(data)
+    kp = []
+    des = data['d']
+    name = data['f']
+    for point in data['k']:
+        temp = cv2.KeyPoint(x=point[0][0], y=point[0][1], _size=point[1], _angle=point[2], _response=point[3],
+                            _octave=point[4], _class_id=point[5])
+        kp.append(temp)
+    return name, kp, np.array(des)
 
 
 def compare(name1, name2, img1, img2):

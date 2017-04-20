@@ -29,7 +29,7 @@ class HashThread(threading.Thread):
                 folder = '%s%s/' % (HASH_PATH, data['f'])
                 queueLock.release()
 
-                img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, False)
+                img = image.loadImageFromUrl(url, resize=False)
                 name = image.fileName(url)
                 image.keypointDesCalc(img, folder + name, 100)
             else:
