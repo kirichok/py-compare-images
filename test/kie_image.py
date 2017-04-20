@@ -11,7 +11,7 @@ import zlib
 from operator import itemgetter
 
 KP_EXT = '.kp'
-DES_EXT = '.des'
+DES_EXT = '.png'
 
 
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
@@ -119,7 +119,7 @@ def saveDesToPath__(des, path, lock):
     write_features_to_file(path, data, lock)
 
 
-def saveKeypointToPath(kp, path, lock):
+def saveKeypointToPath_(kp, path, lock):
     index = []
     for point in kp:
         temp = (point.pt, point.size, point.angle, point.response, point.octave,
@@ -128,7 +128,7 @@ def saveKeypointToPath(kp, path, lock):
     write_to_file(path, index, lock)
 
 
-def saveDesToPath(des, path, lock):
+def saveDesToPath_(des, path, lock):
     # des = des.toList()
     write_to_file(path, des, lock)
 
@@ -144,6 +144,30 @@ def write_to_file(filename, data, lock):
     if lock is not None:
         lock.release()
     p.clear_memo()
+
+
+def saveKeypointToPath(kp, path, lock):
+    index = []
+    for point in kp:
+        temp = (point.pt, point.size, point.angle, point.response, point.octave,
+                point.class_id)
+        index.append(temp)
+
+    if lock is not None:
+        lock.acquire()
+    f = open(path, "wb")
+    f.write(cPickle.dumps(index, 2))
+    f.close()
+    if lock is not None:
+        lock.release()
+
+
+def saveDesToPath(des, path, lock):
+    if lock is not None:
+        lock.acquire()
+    cv2.imwrite(path, des)
+    if lock is not None:
+        lock.release()
 
 
 def loadKpDesFromPath(path, decompress=True):

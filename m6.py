@@ -16,7 +16,8 @@ import test.kie_image as im
 e1 = cv2.getTickCount()
 
 MIN_MATCH_COUNT = 100
-PATH = 'http://192.168.0.164:3000/media/'
+PATH = './images/'
+# PATH = 'http://192.168.0.164:3000/media/'
 fn3 = 'http://comicstore.cf/uploads/diamonds/STK309612.jpg'
 fn1 = 'M7.jpg'
 fn2 = 'M5.jpg'
@@ -24,7 +25,7 @@ fn2 = 'M5.jpg'
 
 t_start = cv2.getTickCount()
 
-img1 = im.loadImageFromUrl(PATH + fn1, resize=False)
+img1 = im.loadImageFromPath(PATH + fn1, resize=False)
 h1, w1 = img1.shape[:2]
 t_end = cv2.getTickCount()
 print "Time loading 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
@@ -34,11 +35,13 @@ print "Time loading 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
 
 # img1 = url_to_image('http://comicstore.cf/uploads/diamonds/STK368216.jpg')  # queryImage
-t_start = cv2.getTickCount()
-img2 = im.loadImageFromUrl(fn3, resize=False)
-h2, w2 = img2.shape[:2]
-t_end = cv2.getTickCount()
-print "Time loading 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
+
+
+# t_start = cv2.getTickCount()
+# img2 = im.loadImageFromUrl(fn3, resize=False)
+# h2, w2 = img2.shape[:2]
+# t_end = cv2.getTickCount()
+# print "Time loading 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
 # cv2.imshow("Image", img2)
 # cv2.waitKey(0)
@@ -55,7 +58,15 @@ kp1, des1 = im.sortKp(_kp1, _des1, 100)
 # print "Time keypoint len: %s" % len(kp1)
 # im.saveKpDesToPath(kp1, des1, PATH + im.fileName(fn1) + '.kp.png')
 # im.saveKeypointToPath(kp1, PATH + im.fileName(fn1) + '.kp')
-# im.saveDesToPath(des1, PATH + im.fileName(fn1) + '.des.jpg')
+
+cv2.imwrite(PATH + im.fileName(fn1) + '.des.png', des1)
+
+des11 = cv2.imread(PATH + im.fileName(fn1) + '.des.png', cv2.IMREAD_GRAYSCALE)
+
+print np.array_equal(des1, des11)
+
+exit(0)
+
 # t_end = cv2.getTickCount()
 # print "Time keypoint 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 # t_start = cv2.getTickCount()
