@@ -137,7 +137,7 @@ def write_to_file(filename, data, lock):
     if lock is not None:
         lock.acquire()
     f = open(filename, "wb")
-    f.write(zlib.compress(cPickle.dumps(data, 2)))
+    f.write(cPickle.dumps(data, 2))
     f.close()
     if lock is not None:
         lock.release()
