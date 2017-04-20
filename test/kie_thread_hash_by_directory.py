@@ -7,18 +7,17 @@ import kie_image as image
 
 HASH_PATH = '../images/hash/'
 
-THREAD_COUNT = 10
+THREAD_COUNT = 5
 exitFlag = 0
 
 
 class HashThread(threading.Thread):
-    def __init__(self, threadID, name, queue, lock, writeLock):
+    def __init__(self, threadID, name, queue, lock):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.queue = queue
         self.lock = lock
-        self.writeLock = writeLock
 
     def run(self):
         print("Starting " + self.name)
@@ -34,7 +33,7 @@ class HashThread(threading.Thread):
 
                 img = image.loadImageFromUrl(url, resize=False)
                 name = image.fileName(url)
-                image.keypointDesCalc(img, folder + name, 100, self.writeLock)
+                image.keypointDesCalc(img, folder + name, 100)
             else:
                 self.lock.release()
 
@@ -52,7 +51,6 @@ nameList = sql.allComics()
 if len(nameList) == 0:
     exit(0)
 
-semaphore = threading.BoundedSemaphore(6)
 queueLock = threading.Lock()
 workQueue = Queue.Queue(1000000)
 threads = []
@@ -60,7 +58,7 @@ threadID = 1
 
 # Create new threads
 for tName in threadList:
-    thread = HashThread(threadID, tName, workQueue, queueLock, semaphore)
+    thread = HashThread(threadID, tName, workQueue, queueLock)
     thread.daemon = True
     thread.start()
     threads.append(thread)
