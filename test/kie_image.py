@@ -47,13 +47,9 @@ def keypointDesCalc(image, savePath='', count=0, writeLock=None):
         kp, des = sortKp(kp, des, count)
     if savePath:
         # saveKpDesToPath(kp, des, savePath + KP_EXT)
-        if writeLock is not None:
-            writeLock.acquire()
-        saveKeypointToPath(kp, savePath + KP_EXT)
-        saveDesToPath(des, savePath + DES_EXT)
-        if writeLock is not None:
-            writeLock.release()
-    return kp, des
+        saveKeypointToPath(kp, savePath + KP_EXT, writeLock)
+        saveDesToPath(des, savePath + DES_EXT, writeLock)
+    # return kp, des
 
 
 def loadKeypointFromPath(path):
@@ -82,8 +78,13 @@ def read_features_from_file(filename):
     return f
 
 
-def write_features_to_file(filename, data):
+def write_features_to_file(filename, data, lock):
+    if lock is not None:
+        lock.acquire()
     np.save(filename, data)
+    if lock is not None:
+        lock.release()
+    del data
 
 
 def pack_keypoint(keypoints):
@@ -108,12 +109,14 @@ def unpack_keypoint(kpts):
         return np.array([])
 
 
-def saveKeypointToPath(kp, path):
-    write_features_to_file(path, pack_keypoint(kp))
+def saveKeypointToPath(kp, path, lock):
+    data = pack_keypoint(kp)
+    write_features_to_file(path, data, lock)
 
 
-def saveDesToPath(des, path):
-    write_features_to_file(path, pack_descriptor(des))
+def saveDesToPath(des, path, lock):
+    data = pack_descriptor(des)
+    write_features_to_file(path, data, lock)
 
 
 def saveKeypointToPath_(kp, path):
@@ -217,7 +220,7 @@ def sortKp(kp, des, count):
         if len(r_kp) == count:
             break
 
-    return r_kp, np.asarray(r_des, np.float32)
+    return r_kp, r_des
 
 
 def keypointDesCalcDb(collection, image, name='', sort=0):
