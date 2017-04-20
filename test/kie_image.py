@@ -4,6 +4,7 @@ import cv2
 # from matplotlib import pyplot as plt
 import urllib
 import math
+import os.path
 from os.path import basename, splitext
 import cPickle
 import zlib
@@ -66,7 +67,52 @@ def loadDesFromPath(path):
     return np.asarray(des, np.float32)
 
 
+def read_features_from_file(filename):
+    """ Read feature properties and return in matrix form. """
+    if os.path.getsize(filename) <= 0:
+        return np.array([])
+    f = np.load(filename)
+    if f.size == 0:
+        return np.array([])
+    f = np.atleast_2d(f)
+    return f
+
+
+def write_features_to_file(filename, data):
+    np.save(filename, data)
+
+
+def pack_keypoint(keypoints):
+    kpts = np.array([[kp.pt[0], kp.pt[1], kp.size,
+                      kp.angle, kp.response, kp.octave,
+                      kp.class_id]
+                     for kp in keypoints])
+    return kpts
+
+
+def pack_descriptor(descriptors):
+    desc = np.array(descriptors)
+    return desc
+
+
+def unpack_keypoint(kpts):
+    try:
+        keypoints = [cv2.KeyPoint(x, y, _size, _angle, _response, int(_octave), int(_class_id))
+                     for x, y, _size, _angle, _response, _octave, _class_id in list(kpts)]
+        return keypoints
+    except(IndexError):
+        return np.array([])
+
+
 def saveKeypointToPath(kp, path):
+    write_features_to_file(path, pack_keypoint(kp))
+
+
+def saveDesToPath(des, path):
+    write_features_to_file(path, pack_descriptor(des))
+
+
+def saveKeypointToPath_(kp, path):
     index = []
     for point in kp:
         temp = (point.pt, point.size, point.angle, point.response, point.octave,
@@ -77,7 +123,7 @@ def saveKeypointToPath(kp, path):
     f.close()
 
 
-def saveDesToPath(des, path):
+def saveDesToPath_(des, path):
     des = des.tolist()
     f = open(path, "wb")
     f.write(cPickle.dumps(des))
