@@ -155,7 +155,7 @@ def saveKeypointToPath(kp, path, lock):
 
     if lock is not None:
         lock.acquire()
-    f = open(path, "wb")
+    f = open(path, "w")
     f.write(cPickle.dumps(index))
     f.close()
     if lock is not None:
