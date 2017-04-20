@@ -129,7 +129,7 @@ def saveKeypointToPath(kp, path, lock):
 
 
 def saveDesToPath(des, path, lock):
-    des = des.tolist()
+    # des = des.toList()
     write_to_file(path, des, lock)
 
 
@@ -137,7 +137,7 @@ def write_to_file(filename, data, lock):
     if lock is not None:
         lock.acquire()
     f = open(filename, "wb")
-    f.write(cPickle.dumps(data, 2))
+    f.write(zlib.compress(cPickle.dumps(data, 2)))
     f.close()
     if lock is not None:
         lock.release()
@@ -227,7 +227,7 @@ def sortKp(kp, des, count):
         if len(r_kp) == count:
             break
 
-    return r_kp, r_des
+    return r_kp, np.asarray(r_des, np.float32)
 
 
 def keypointDesCalcDb(collection, image, name='', sort=0):
