@@ -226,17 +226,65 @@ def getKpDes(img):
 
 
 def sortKp(kp, des, count):
+
+    def checkMinDist(p, kps):
+        flag = False
+        for k, d in kps:
+            if abs(p.pt[0] - k.pt[0]) < 1 and abs(p.pt[1] - k.pt[1]) < 1:
+                flag = True
+                break
+        return flag
+
     _kp = []
     i = 0
-    # for point in kp:
-    #     _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
-    #     i += 1
-    #
-    # _kp = sorted(_kp, key=itemgetter(1), reverse=True)
+    minSize = None
+    pos = 0
+    for point in kp:
+        if minSize is None:
+            minSize = point.size
+        elif len(_kp) < count:
+            if checkMinDist(point, _kp):
+                continue
+
+            if point.size < minSize:
+                minSize = point.size
+                pos = len(_kp)
+            _kp.append((point, des[i]))
+        elif len(_kp) == count and point.size > minSize and not checkMinDist(point, _kp):
+            _kp[pos] = (point, des[i])
+            minSize = point.size
+            ii = 0
+            for p, d in _kp:
+                if p.size < minSize:
+                    pos = ii
+                    minSize = p.size
+                ii += 1
+        # _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
+        i += 1
+
+    _kp = sorted(_kp, key=lambda x: x[0].size, reverse=True)
 
     r_kp = []
     r_des = []
+    for k, d in _kp:
+        r_des.append(d)
+        r_kp.append(k)
+
+    return r_kp, np.asarray(r_des, np.float32)
+
+
+def sortKp_(kp, des, count):
+    _kp = []
+    i = 0
     for point in kp:
+        _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
+        i += 1
+
+    _kp = sorted(_kp, key=itemgetter(1), reverse=True)
+
+    r_kp = []
+    r_des = []
+    for point in _kp:
         flag = False
         for p in r_kp:
             if abs(point[0][0] - p.pt[0]) < 1 and abs(point[0][1] - p.pt[1]) < 1:
