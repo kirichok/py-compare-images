@@ -109,32 +109,39 @@ def unpack_keypoint(kpts):
         return np.array([])
 
 
-def saveKeypointToPath(kp, path, lock):
+def saveKeypointToPath__(kp, path, lock):
     data = pack_keypoint(kp)
     write_features_to_file(path, data, lock)
 
 
-def saveDesToPath(des, path, lock):
+def saveDesToPath__(des, path, lock):
     data = pack_descriptor(des)
     write_features_to_file(path, data, lock)
 
 
-def saveKeypointToPath_(kp, path):
+def saveKeypointToPath(kp, path, lock):
     index = []
     for point in kp:
         temp = (point.pt, point.size, point.angle, point.response, point.octave,
                 point.class_id)
         index.append(temp)
-    f = open(path, "wb")
-    f.write(cPickle.dumps(index))
-    f.close()
+    write_to_file(path, index, lock)
 
 
-def saveDesToPath_(des, path):
+def saveDesToPath(des, path, lock):
     des = des.tolist()
-    f = open(path, "wb")
-    f.write(cPickle.dumps(des))
+    write_to_file(path, des, lock)
+
+
+def write_to_file(filename, data, lock):
+    if lock is not None:
+        lock.acquire()
+    f = open(filename, "wb")
+    f.write(cPickle.dumps(data, 2))
     f.close()
+    if lock is not None:
+        lock.release()
+    del data
 
 
 def loadKpDesFromPath(path, decompress=True):
