@@ -137,11 +137,13 @@ def write_to_file(filename, data, lock):
     if lock is not None:
         lock.acquire()
     f = open(filename, "wb")
-    f.write(cPickle.dumps(data, 2))
+    p = cPickle.Pickler(f, 2)
+    p.dump(data)
+    # f.write(zlib.compress(cPickle.dumps(data, 2)))
     f.close()
     if lock is not None:
         lock.release()
-    del data
+    p.clear_memo()
 
 
 def loadKpDesFromPath(path, decompress=True):
