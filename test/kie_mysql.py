@@ -14,7 +14,7 @@ def allComics():
              "FROM comicstore.diamond_comics_source "
              "WHERE image_link != '' "
              "AND category in (1,2,3,4) "
-             "ORDER BY id")
+             "ORDER BY id LIMIT 1000")
 
     cursor.execute(query)
     urls = []
