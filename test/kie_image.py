@@ -228,15 +228,15 @@ def getKpDes(img):
 def sortKp(kp, des, count):
     _kp = []
     i = 0
-    for point in kp:
-        _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
-        i += 1
-
-    _kp = sorted(_kp, key=itemgetter(1), reverse=True)
+    # for point in kp:
+    #     _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
+    #     i += 1
+    #
+    # _kp = sorted(_kp, key=itemgetter(1), reverse=True)
 
     r_kp = []
     r_des = []
-    for point in _kp:
+    for point in kp:
         flag = False
         for p in r_kp:
             if abs(point[0][0] - p.pt[0]) < 1 and abs(point[0][1] - p.pt[1]) < 1:
