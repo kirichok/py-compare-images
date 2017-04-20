@@ -12,28 +12,31 @@ exitFlag = 0
 
 
 class HashThread(threading.Thread):
-    def __init__(self, threadID, name, q):
+    def __init__(self, threadID, name, queue, lock, writeLock):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.q = q
+        self.queue = queue
+        self.lock = lock
+        self.writeLock = writeLock
 
     def run(self):
         print("Starting " + self.name)
 
         while not exitFlag:
-            queueLock.acquire()
-            if not workQueue.empty():
-                data = self.q.get()
+            self.lock.acquire()
+            if not self.queue.empty():
+                data = self.queue.get()
+                self.lock.release()
+
                 url = data['url']
                 folder = '%s%s/' % (HASH_PATH, data['f'])
-                queueLock.release()
 
                 img = image.loadImageFromUrl(url, resize=False)
                 name = image.fileName(url)
-                image.keypointDesCalc(img, folder + name, 100)
+                image.keypointDesCalc(img, folder + name, 100, self.writeLock)
             else:
-                queueLock.release()
+                self.lock.release()
 
         print("Exiting " + self.name)
 
@@ -49,6 +52,7 @@ nameList = sql.allComics()
 if len(nameList) == 0:
     exit(0)
 
+semaphore = threading.BoundedSemaphore(3)
 queueLock = threading.Lock()
 workQueue = Queue.Queue(1000000)
 threads = []
@@ -56,7 +60,7 @@ threadID = 1
 
 # Create new threads
 for tName in threadList:
-    thread = HashThread(threadID, tName, workQueue)
+    thread = HashThread(threadID, tName, workQueue, queueLock, semaphore)
     thread.daemon = True
     thread.start()
     threads.append(thread)

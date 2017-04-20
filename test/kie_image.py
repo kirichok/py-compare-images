@@ -41,14 +41,18 @@ def __getDeltaTransformation(image, maxSize):
     return cv2.resize(image, (math.trunc(width * delta), math.trunc(height * delta)), interpolation=cv2.INTER_CUBIC)
 
 
-def keypointDesCalc(image, savePath='', count=0):
+def keypointDesCalc(image, savePath='', count=0, writeLock=None):
     kp, des = sift.detectAndCompute(image, None)
     if count != 0:
         kp, des = sortKp(kp, des, count)
     if savePath:
         # saveKpDesToPath(kp, des, savePath + KP_EXT)
+        if writeLock is not None:
+            writeLock.acquire()
         saveKeypointToPath(kp, savePath + KP_EXT)
         saveDesToPath(des, savePath + DES_EXT)
+        if writeLock is not None:
+            writeLock.release()
     return kp, des
 
 
