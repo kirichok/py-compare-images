@@ -9,7 +9,7 @@ import cPickle
 import zlib
 
 KP_EXT = '.kp'
-DES_EXT = '.des.jpg'
+DES_EXT = '.png'
 
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
     resp = urllib.urlopen(url)
@@ -19,7 +19,6 @@ def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
         return __getDeltaTransformation(image, maxSize)
     else:
         return image
-    # return resize and __getDeltaTransformation(image, maxSize) or image
 
 
 def loadImageFromPath(path, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
@@ -28,7 +27,6 @@ def loadImageFromPath(path, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800
         return __getDeltaTransformation(image, maxSize)
     else:
         return image
-    # return resize and __getDeltaTransformation(image, maxSize) or image
 
 
 def __getDeltaTransformation(image, maxSize):
@@ -40,13 +38,63 @@ def __getDeltaTransformation(image, maxSize):
     return cv2.resize(image, (math.trunc(width * delta), math.trunc(height * delta)), interpolation=cv2.INTER_CUBIC)
 
 
-def keypointDesCalc(image, savePath=''):
+def keypointDesCalc(image, savePath='', count=0):
     kp, des = sift.detectAndCompute(image, None)
+    if count != 0:
+        kp, des = sortKp(kp, des, count)
     if savePath:
         # saveKpDesToPath(kp, des, savePath + KP_EXT)
         saveKeypointToPath(kp, savePath + KP_EXT)
         saveDesToPath(des, savePath + DES_EXT)
     return kp, des
+
+
+def sortKp(kp, des, count):
+
+    def checkMinDist(p, kps):
+        flag = False
+        for k, d in kps:
+            if abs(p.pt[0] - k.pt[0]) < 1 and abs(p.pt[1] - k.pt[1]) < 1:
+                flag = True
+                break
+        return flag
+
+    _kp = []
+    i = 0
+    minSize = None
+    pos = 0
+    for point in kp:
+        if minSize is None:
+            minSize = point.size
+        elif len(_kp) < count:
+            if checkMinDist(point, _kp):
+                continue
+
+            if point.size < minSize:
+                minSize = point.size
+                pos = len(_kp)
+            _kp.append((point, des[i]))
+        elif len(_kp) == count and point.size > minSize and not checkMinDist(point, _kp):
+            _kp[pos] = (point, des[i])
+            minSize = point.size
+            ii = 0
+            for p, d in _kp:
+                if p.size < minSize:
+                    pos = ii
+                    minSize = p.size
+                ii += 1
+        # _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
+        i += 1
+
+    _kp = sorted(_kp, key=lambda x: x[0].size, reverse=True)
+
+    r_kp = []
+    r_des = []
+    for k, d in _kp:
+        r_des.append(d)
+        r_kp.append(k)
+
+    return r_kp, np.asarray(r_des, np.float32)
 
 
 def loadKeypointFromPath(path):
@@ -84,8 +132,8 @@ def saveKeypointToPath(kp, path):
         temp = (point.pt, point.size, point.angle, point.response, point.octave,
                 point.class_id)
         index.append(temp)
-    f = open(path, "w")
-    f.write(cPickle.dumps(index))
+    f = open(path, "wb")
+    f.write(cPickle.dumps(index, 2))
     f.close()
 
 
