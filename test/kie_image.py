@@ -12,7 +12,7 @@ from operator import itemgetter
 import copy
 
 KP_EXT = '.kp'
-DES_EXT = '.png'
+DES_EXT = '.des'
 
 
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
