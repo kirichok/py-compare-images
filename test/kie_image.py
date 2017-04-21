@@ -41,8 +41,8 @@ def __getDeltaTransformation(image, maxSize):
 
 def keypointDesCalc(image, savePath='', count=0):
     kp, des = sift.detectAndCompute(image, None)
-    if count != 0:
-        kp, des = sortKp(kp, des, count)
+    # if count != 0:
+    #     kp, des = sortKp(kp, des, count)
     if savePath:
         # saveKpDesToPath(kp, des, savePath + KP_EXT)
         saveKeypointToPath(kp, savePath + KP_EXT)
