@@ -25,10 +25,9 @@ class HashThread(threading.Thread):
             queueLock.acquire()
             if not workQueue.empty():
                 data = self.q.get()
-                queueLock.release()
-
                 url = data['url']
                 folder = '%s%s/' % (HASH_PATH, data['f'])
+                queueLock.release()
 
                 img = image.loadImageFromUrl(url, cv2.IMREAD_GRAYSCALE, False)
                 name = image.fileName(url)

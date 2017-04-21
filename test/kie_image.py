@@ -11,6 +11,7 @@ import zlib
 KP_EXT = '.kp'
 DES_EXT = '.png'
 
+
 def loadImageFromUrl(url, color=cv2.IMREAD_GRAYSCALE, resize=True, maxSize=800):
     resp = urllib.urlopen(url)
     image = np.asarray(bytearray(resp.read()), dtype="uint8")
@@ -50,51 +51,54 @@ def keypointDesCalc(image, savePath='', count=0):
 
 
 def sortKp(kp, des, count):
-
     def checkMinDist(p, kps):
         flag = False
-        for k, d in kps:
-            if abs(p.pt[0] - k.pt[0]) < 1 and abs(p.pt[1] - k.pt[1]) < 1:
+        for _k in kps:
+            if abs(p.pt[0] - _k.pt[0]) < 1 and abs(p.pt[1] - _k.pt[1]) < 1:
                 flag = True
                 break
         return flag
 
     _kp = []
+    _des = []
     i = 0
-    minSize = None
-    pos = 0
-    for point in kp:
-        if minSize is None:
-            minSize = point.size
+    msize = None
+    psize = 0
+    for p in kp:
+        if msize is None:
+            msize = p.size
+            _kp.append(p)
+            _des.append(des[i])
         elif len(_kp) < count:
-            if checkMinDist(point, _kp):
+            if checkMinDist(p, _kp):
                 continue
 
-            if point.size < minSize:
-                minSize = point.size
-                pos = len(_kp)
-            _kp.append((point, des[i]))
-        elif len(_kp) == count and point.size > minSize and not checkMinDist(point, _kp):
-            _kp[pos] = (point, des[i])
-            minSize = point.size
+            if p.size < msize:
+                msize = p.size
+                psize = len(_kp)
+            _kp.append(p)
+            _des.append(des[i])
+        elif len(_kp) == count and p.size > msize and not checkMinDist(p, _kp):
+            _kp[psize] = p
+            _des[psize] = des[i]
+            msize = p.size
             ii = 0
-            for p, d in _kp:
-                if p.size < minSize:
-                    pos = ii
-                    minSize = p.size
+            for k in _kp:
+                if k.size < msize:
+                    psize = ii
+                    msize = k.size
                 ii += 1
-        # _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
         i += 1
 
-    _kp = sorted(_kp, key=lambda x: x[0].size, reverse=True)
+    # _kp = sorted(_kp, key=lambda x: x[0].size, reverse=True)
+    #
+    # r_kp = []
+    # r_des = []
+    # for k, d in _kp:
+    #     r_des.append(d)
+    #     r_kp.append(k)
 
-    r_kp = []
-    r_des = []
-    for k, d in _kp:
-        r_des.append(d)
-        r_kp.append(k)
-
-    return r_kp, np.asarray(r_des, np.float32)
+    return _kp, np.asarray(_des, np.float32)
 
 
 def loadKeypointFromPath(path):
