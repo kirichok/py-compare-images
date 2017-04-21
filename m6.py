@@ -5,8 +5,7 @@ from matplotlib import pyplot as plt
 import urllib
 import math
 import test.kie_image as im
-
-
+import sys
 
 # [[(int(math.ceil(_w[0][1])) if len(_w) > 0 else 0) for _w in _h] for _h in _kp]
 # [[(len(_w) for _w in _h] for _h in _kp]
@@ -22,10 +21,9 @@ fn3 = 'http://comicstore.cf/uploads/diamonds/STK309612.jpg'
 fn1 = 'M7.jpg'
 fn2 = 'M5.jpg'
 
-
 t_start = cv2.getTickCount()
 
-img1 = im.loadImageFromPath(PATH + fn1, resize=False)
+img1 = im.loadImageFromPath(PATH + fn1, resize=True, maxSize=400)
 h1, w1 = img1.shape[:2]
 t_end = cv2.getTickCount()
 print "Time loading 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
@@ -38,7 +36,7 @@ print "Time loading 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
 
 # t_start = cv2.getTickCount()
-# img2 = im.loadImageFromUrl(fn3, resize=False)
+img2 = im.loadImageFromUrl(fn3, resize=True, maxSize=1280)
 # h2, w2 = img2.shape[:2]
 # t_end = cv2.getTickCount()
 # print "Time loading 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
@@ -59,13 +57,39 @@ kp1, des1 = im.sortKp(_kp1, _des1, 100)
 # im.saveKpDesToPath(kp1, des1, PATH + im.fileName(fn1) + '.kp.png')
 # im.saveKeypointToPath(kp1, PATH + im.fileName(fn1) + '.kp')
 
-cv2.imwrite(PATH + im.fileName(fn1) + '.des.png', des1)
+print sys.getsizeof(kp1)
+print sys.getsizeof(des1)
+exit(0)
 
-des11 = cv2.imread(PATH + im.fileName(fn1) + '.des.png', cv2.IMREAD_GRAYSCALE)
+im.saveDesToPath(des1, PATH + '1.des')
+im.saveKeypointToPath(kp1, PATH + '1.kp')
+
+des11 = im.loadDesFromPath(PATH + '1.des')
+kp11 = im.loadKeypointFromPath(PATH + '1.kp')
 
 print np.array_equal(des1, des11)
+print np.array_equal(kp1, kp11)
 
-exit(0)
+flag = True
+for i in range(0, 100):
+    if kp1[i].pt[0] != kp11[i].pt[0] or \
+                    kp1[i].pt[1] != kp11[i].pt[1] or \
+                    kp1[i].size != kp11[i].size or \
+                    kp1[i].angle != kp11[i].angle or \
+                    kp1[i].class_id != kp11[i].class_id or \
+                    kp1[i].octave != kp11[i].octave or \
+                    kp1[i].response != kp11[i].response:
+        flag = False
+        break
+
+print flag
+
+# exit(0)
+# cv2.imwrite(PATH + im.fileName(fn1) + '.des.png', des1)
+# des11 = cv2.imread(PATH + im.fileName(fn1) + '.des.png', cv2.IMREAD_GRAYSCALE)
+# print np.array_equal(des1, des11)
+
+# exit(0)
 
 # t_end = cv2.getTickCount()
 # print "Time keypoint 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())

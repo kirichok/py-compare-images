@@ -9,6 +9,7 @@ from os.path import basename, splitext
 import cPickle
 import zlib
 from operator import itemgetter
+import copy
 
 KP_EXT = '.kp'
 DES_EXT = '.png'
@@ -41,19 +42,18 @@ def __getDeltaTransformation(image, maxSize):
     return cv2.resize(image, (math.trunc(width * delta), math.trunc(height * delta)), interpolation=cv2.INTER_CUBIC)
 
 
-def keypointDesCalc(image, savePath='', count=0, writeLock=None):
+def keypointDesCalc(image, savePath='', count=0, wlock=None):
     kp, des = sift.detectAndCompute(image, None)
-    # if count != 0:
-    #     kp, des = sortKp(kp, des, count)
+    if count != 0:
+        kp, des = sortKp(kp, des, count)
     if savePath:
-        # saveKpDesToPath(kp, des, savePath + KP_EXT)
-        saveKeypointToPath(kp, savePath + KP_EXT, writeLock)
-        saveDesToPath(des, savePath + DES_EXT, writeLock)
+        saveKeypointToPath(kp, savePath + KP_EXT, wlock)
+        saveDesToPath(des, savePath + DES_EXT, wlock)
     # return kp, des
 
 
 def loadKeypointFromPath(path):
-    index = cPickle.loads(open(path, 'rb').read())
+    index = cPickle.loads(zlib.decompress(open(path, 'rb').read()))
     kp = []
     for point in index:
         temp = cv2.KeyPoint(x=point[0][0], y=point[0][1], _size=point[1], _angle=point[2], _response=point[3],
@@ -63,7 +63,7 @@ def loadKeypointFromPath(path):
 
 
 def loadDesFromPath(path):
-    des = cPickle.loads(open(path, 'rb').read())
+    des = cPickle.loads(zlib.decompress(open(path, 'rb').read()))
     return np.asarray(des, np.float32)
 
 
@@ -119,50 +119,45 @@ def saveDesToPath__(des, path, lock):
     write_features_to_file(path, data, lock)
 
 
+def saveKeypointToPath(kp, path, lock=None):
+    data = []
+    for p in kp:
+        temp = (p.pt, p.size, p.angle, p.response, p.octave, p.class_id)
+        data.append(temp)
+    write_to_file(path, data, lock)
+
+
+def saveDesToPath(des, path, lock=None):
+    write_to_file(path, des, lock)
+
+
+def write_to_file(filename, data, lock=None):
+    if lock is not None:
+        lock.acquire()
+    f = open(filename, "wb")
+    f.write(zlib.compress(cPickle.dumps(data, 2)))
+    f.close()
+    if lock is not None:
+        lock.release()
+
+
 def saveKeypointToPath_(kp, path, lock):
     index = []
     for point in kp:
         temp = (point.pt, point.size, point.angle, point.response, point.octave,
                 point.class_id)
         index.append(temp)
-    write_to_file(path, index, lock)
+
+    if lock is not None:
+        lock.acquire()
+    f = open(path, "wb")
+    f.write(cPickle.dumps(index, 2))
+    f.close()
+    if lock is not None:
+        lock.release()
 
 
 def saveDesToPath_(des, path, lock):
-    # des = des.toList()
-    write_to_file(path, des, lock)
-
-
-def write_to_file(filename, data, lock):
-    if lock is not None:
-        lock.acquire()
-    f = open(filename, "wb")
-    p = cPickle.Pickler(f, 2)
-    p.dump(data)
-    # f.write(zlib.compress(cPickle.dumps(data, 2)))
-    f.close()
-    if lock is not None:
-        lock.release()
-    p.clear_memo()
-
-
-def saveKeypointToPath(kp, path, lock):
-    index = []
-    for point in kp:
-        temp = (point.pt, point.size, point.angle, point.response, point.octave,
-                point.class_id)
-        index.append(temp)
-
-    if lock is not None:
-        lock.acquire()
-    f = open(path, "w")
-    f.write(cPickle.dumps(index))
-    f.close()
-    if lock is not None:
-        lock.release()
-
-
-def saveDesToPath(des, path, lock):
     if lock is not None:
         lock.acquire()
     cv2.imwrite(path, des)
@@ -227,48 +222,54 @@ def getKpDes(img):
 
 def sortKp(kp, des, count):
 
-    def checkMinDist(p, kps):
+    def check_min_dist(p, arr, kps):
         flag = False
-        for k, d in kps:
-            if abs(p.pt[0] - k.pt[0]) < 1 and abs(p.pt[1] - k.pt[1]) < 1:
+        for _a in arr:
+            if abs(p.pt[0] - kps[_a].pt[0]) < 1 and abs(p.pt[1] - kps[_a].pt[1]) < 1:
                 flag = True
                 break
         return flag
 
-    _kp = []
+    a = []
     i = 0
-    minSize = None
-    pos = 0
+    min_size = None
+    min_pos = 0
     for point in kp:
-        if minSize is None:
-            minSize = point.size
-        elif len(_kp) < count:
-            if checkMinDist(point, _kp):
+        if min_size is None:
+            min_size = point.size
+            a.append(i)
+        elif len(a) < count:
+            if check_min_dist(point, a, kp):
                 continue
 
-            if point.size < minSize:
-                minSize = point.size
-                pos = len(_kp)
-            _kp.append((point, des[i]))
-        elif len(_kp) == count and point.size > minSize and not checkMinDist(point, _kp):
-            _kp[pos] = (point, des[i])
-            minSize = point.size
+            if point.size < min_size:
+                min_size = point.size
+                min_pos = len(a)
+            a.append(i)
+        elif len(a) == count and point.size > min_size and not check_min_dist(point, a, kp):
+            a[min_pos] = i
+            min_size = point.size
             ii = 0
-            for p, d in _kp:
-                if p.size < minSize:
-                    pos = ii
-                    minSize = p.size
+            for _a in a:
+                if kp[_a].size < min_size:
+                    min_pos = ii
+                    min_size = kp[_a].size
                 ii += 1
-        # _kp.append((point.pt, point.size, point.angle, point.response, point.octave, point.class_id, des[i]))
         i += 1
 
-    _kp = sorted(_kp, key=lambda x: x[0].size, reverse=True)
+    a = sorted(a, key=lambda x: kp[x].size, reverse=True)
 
     r_kp = []
     r_des = []
-    for k, d in _kp:
-        r_des.append(d)
-        r_kp.append(k)
+    for _a in a:
+        r_des.append(des[_a][:])
+        r_kp.append(cv2.KeyPoint(x=kp[_a].pt[0],
+                                 y=kp[_a].pt[1],
+                                 _size=kp[_a].size,
+                                 _angle=kp[_a].angle,
+                                 _response=kp[_a].response,
+                                 _octave=kp[_a].octave,
+                                 _class_id=kp[_a].class_id))
 
     return r_kp, np.asarray(r_des, np.float32)
 
