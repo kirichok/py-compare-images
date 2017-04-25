@@ -49,7 +49,7 @@ def keypointDesCalc(image, savePath='', count=0, wlock=None):
     if savePath:
         saveKeypointToPath(kp, savePath + KP_EXT, wlock)
         saveDesToPath(des, savePath + DES_EXT, wlock)
-    # return kp, des
+    return kp, des
 
 
 def loadKeypointFromPath(path):
@@ -157,7 +157,7 @@ def saveKeypointToPath_(kp, path, lock):
         lock.release()
 
 
-def saveDesToPath_(des, path, lock):
+def saveDesToPath_(des, path, lock=None):
     if lock is not None:
         lock.acquire()
     cv2.imwrite(path, des)
@@ -399,6 +399,7 @@ sift = cv2.xfeatures2d.SIFT_create()
 
 FLANN_INDEX_KDTREE = 0
 index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+# search_params = {}
 search_params = dict(checks=50)
 
 flann = cv2.FlannBasedMatcher(index_params, search_params)
