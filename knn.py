@@ -28,8 +28,8 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
         return
 
     print("Files count: %d " % len(nameList))
-    for i, n in enumerate(nameList[:50000]):
-        if i % 10000 == 0:
+    for i, n in enumerate(nameList[:1000]):
+        if i % 100 == 0:
             print '%d/50000' % i
         knn.add([im.loadDesFromPath(n)[:25]])
         # knn.train()
@@ -58,9 +58,22 @@ t_start = cv2.getTickCount()
 matches = flann.knnMatch(des, k=2)
 t_end = cv2.getTickCount()
 print "Time match: %s" % ((t_end - t_start) / cv2.getTickFrequency())
-m = [(m.queryIdx, m.trainIdx, m.imgIdx) for m, n in matches if m.distance < n.distance * 0.75]
-duples = [c for n, (a, b, c) in enumerate(m) if c in [cc for aa, bb, cc in m[:n if n>0 else n+1]]]
-no_duples = [c for n, (a, b, c) in enumerate(m) if c not in duples and c not in [cc for aa, bb, cc in m[:n]]]
-print "Points: %d,\n no duples(%d): %s,\n duples(%d): %s" % (len(m),
-                                                             len(no_duples), ' '.join([str(i) for i in no_duples]),
-                                                             len(duples), ' '.join([str(i) for i in duples]))
+m1 = [(m.queryIdx, m.trainIdx, m.imgIdx) for m, n in matches if m.distance < n.distance * 0.75]
+
+m = [m.imgIdx for m, n in matches if m.distance < n.distance * 0.75]
+results = {'v': [], 'c': []}
+for i in m:
+    try:
+        index = results['v'].index(i)
+        results['c'][index] += 1
+    except ValueError:
+        results['v'].append(i)
+        results['c'].append(1)
+
+print '%d:\n %s' % (len(m),' '.join(['- %s(%s)\n' % (results['v'][i], results['c'][i]) for i in range(0, len(results['v']))]))
+
+# duples = [c for n, (a, b, c) in enumerate(m) if c in [cc for aa, bb, cc in m[:n if n > 0 else n + 1]]]
+# no_duples = [c for n, (a, b, c) in enumerate(m) if c not in duples and c not in [cc for aa, bb, cc in m[:n]]]
+# print "Points: %d,\n no duples(%d): %s,\n duples(%d): %s" % (len(m),
+#                                                              len(no_duples), ' '.join([str(i) for i in no_duples]),
+#                                                              len(duples), ' '.join([str(i) for i in duples]))
