@@ -15,6 +15,8 @@ DES_EXT = '.des'
 FLANN_INDEX_KDTREE = 0
 index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
 search_params = dict(checks=50)
+sift = cv2.xfeatures2d.SIFT_create()
+
 flanns = []
 filenames = []
 
@@ -40,33 +42,39 @@ class LoadHashThread(threading.Thread):
 
 
 class checkHashThread(threading.Thread):
-    def __init__(self, threadID, name, task, flann, files):
+    def __init__(self, threadID, name, task, flann, files, event, lock):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.task = task
         self.files = files
         self.flann = flann
+        self.event = event
+        self.lock = lock
 
     def run(self):
         while not self.event.is_set():
             if not self.task.empty():
+                self.lock.acquire()
                 task = self.task.get()
-                matches = self.flann.knnMatch(task[1], k=2)
+                self.lock.release()
+                matches = self.flann.knnMatch(task, k=2)
 
                 m = [m.imgIdx for m, n in matches if m.distance < n.distance * 0.75]
-                results = {'v': [], 'c': []}
-                for i in m:
-                    try:
-                        index = results['v'].index(i)
-                        results['c'][index] += 1
-                    except ValueError:
-                        results['v'].append(i)
-                        results['c'].append(1)
+                if len(m) > 0:
+                    results = {'v': [], 'c': []}
+                    for i in m:
+                        try:
+                            index = results['v'].index(i)
+                            results['c'][index] += 1
+                        except ValueError:
+                            results['v'].append(i)
+                            results['c'].append(1)
 
-                print '%d:\n %s' % (len(m), ' '.join(
-                    ['- %s(%s): \n' % (results['v'][i], results['c'][i], self.files[results['v'][i]]) for i in
-                     range(0, len(results['v']))]))
+                    print '%d:\n %s' % (len(m), ' '.join(
+                        ['- %s(%s): %s\n' % (results['v'][i], results['c'][i], self.files[results['v'][i]]) for i in range(0, len(results['v']))]))
+                else:
+                    print 'Not found'
 
 
 def loadFiles(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
@@ -87,7 +95,7 @@ def loadFiles(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
                 curQueue = Queue.Queue(filesInQueue)
                 count = 0
 
-            # if countAll == 2000:
+            # if countAll == 1000:
             #     folder = -2
             #     break
 
@@ -136,8 +144,42 @@ def loadFiles(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
             t.join()
 
 
+def startThreads(lock):
+    threadList = []
+    count = 0
+    while count < len(flanns):
+        threadList.append("CheckFilesThread-%d" % count)
+        filenames.append([])
+        count += 1
+
+    event = threading.Event()
+    threads = []
+    threadID = 0
+    tasks = []
+    # Create new threads
+    for i, tName in enumerate(threadList):
+        task = Queue.Queue(100)
+        tasks.append(task)
+        thread = checkHashThread(threadID, tName, task, flanns[i], filenames[i], event, lock)
+        thread.daemon = True
+        thread.start()
+        threads.append(thread)
+        threadID += 1
+
+    return threads, event, tasks
+
+
+def stopThreads(threads, event):
+    # Notify threads it's time to exit
+    event.set()
+
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+
+
 def testFlan():
-    sift = cv2.xfeatures2d.SIFT_create()
+
 
     flann = cv2.FlannBasedMatcher(index_params, search_params)
 
@@ -191,6 +233,8 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
 
 if __name__ == '__main__':
     loadFiles()
+    lock = threading.Lock()
+    threads, event, tasks = startThreads(lock)
 
     inpt = -1
     while inpt != 0:
@@ -199,4 +243,18 @@ if __name__ == '__main__':
         except ValueError:
             inpt = -1
             continue
-        pass
+
+        if inpt == 1:
+            img = im.loadImageFromPath('../images/z13.jpg', resize=True, maxSize=800)
+            _kp, _des = sift.detectAndCompute(img, None)
+            kp, des = im.sortKp(_kp, _des, 50)
+
+            lock.acquire()
+            for t in tasks:
+                t.put(des)
+            lock.release()
+            pass
+        else:
+            pass
+
+    stopThreads(threads, event)
