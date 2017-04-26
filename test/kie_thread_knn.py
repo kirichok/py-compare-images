@@ -227,7 +227,7 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
         return
 
     print("Files count: %d " % len(nameList))
-    for i, n in enumerate(nameList[:50000]):
+    for i, n in enumerate(nameList[:10000]):
         if i % 10000 == 0:
             print '%d/50000' % i
         knn.add([im.loadDesFromPath(n)[:50]])
