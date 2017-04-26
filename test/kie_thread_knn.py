@@ -38,7 +38,7 @@ class LoadHashThread(threading.Thread):
                 des = im.loadDesFromPath(task)
                 if len(des) >= 2:
                     self.files.append(im.fileName(task))
-                    self.flann.add([des[:25]])
+                    self.flann.add([des[:35]])
 
 
 class checkHashThread(threading.Thread):
