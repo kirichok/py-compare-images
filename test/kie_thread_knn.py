@@ -14,7 +14,7 @@ DES_EXT = '.des'
 
 
 FLANN_INDEX_KDTREE = 1
-index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=50)
+index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
 # search_params = dict(checks=50)
 search_params = {}
 sift = cv2.xfeatures2d.SIFT_create()
