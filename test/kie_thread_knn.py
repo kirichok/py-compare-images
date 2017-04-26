@@ -14,7 +14,7 @@ DES_EXT = '.des'
 
 
 FLANN_INDEX_KDTREE = 1
-index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=3)
 # search_params = dict(checks=50)
 search_params = {}
 sift = cv2.xfeatures2d.SIFT_create()
@@ -261,7 +261,7 @@ if __name__ == '__main__':
 
             img = im.loadImageFromPath('../images/%s' % file_name, resize=True, maxSize=800)
             _kp, _des = sift.detectAndCompute(img, None)
-            kp, des = im.sortKp(_kp, _des, 50)
+            kp, des = im.sortKp(_kp, _des, 200)
 
             lock.acquire()
             for t in tasks:
