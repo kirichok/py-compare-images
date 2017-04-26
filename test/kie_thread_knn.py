@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
         if inpt == 1:
             try:
-                file_name = int(raw_input('Input filename: '))
+                file_name = raw_input('Input filename: ')
             except ValueError:
                 file_name = None
                 continue
