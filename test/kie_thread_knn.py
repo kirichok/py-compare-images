@@ -13,10 +13,10 @@ HASH_PATH = '../images/hash/'
 DES_EXT = '.des'
 
 
-FLANN_INDEX_KDTREE = 1
-index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=6)
-# search_params = dict(checks=50)
-search_params = {}
+FLANN_INDEX_KDTREE = 0
+index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+search_params = dict(checks=50)
+# search_params = {}
 sift = cv2.xfeatures2d.SIFT_create()
 
 flanns = []
@@ -66,7 +66,7 @@ class checkHashThread(threading.Thread):
                 t_end = cv2.getTickCount()
                 print "(%s) Time: %s" % (self.name, (t_end - t_start) / cv2.getTickFrequency())
 
-                m = [m.imgIdx for m, n in matches if m.distance < n.distance * 0.75]
+                m = [m.imgIdx for m, n in matches if m.distance < n.distance * 0.6]
                 if len(m) > 0:
                     results = {'v': [], 'c': []}
                     for i in m:
