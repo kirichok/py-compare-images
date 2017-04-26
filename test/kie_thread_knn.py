@@ -58,7 +58,10 @@ class checkHashThread(threading.Thread):
                 self.lock.acquire()
                 task = self.task.get()
                 self.lock.release()
+                t_start = cv2.getTickCount()
                 matches = self.flann.knnMatch(task, k=2)
+                t_end = cv2.getTickCount()
+                print "(%s) Time: %s" % (self.name, (t_end - t_start) / cv2.getTickFrequency())
 
                 m = [m.imgIdx for m, n in matches if m.distance < n.distance * 0.75]
                 if len(m) > 0:
