@@ -230,10 +230,9 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
     for i, n in enumerate(nameList[:50000]):
         if i % 10000 == 0:
             print '%d/50000' % i
-        knn.add([im.loadDesFromPath(n)[:25]])
+        knn.add([im.loadDesFromPath(n)[:50]])
         # knn.train()
     knn.train()
-    knn.write(HASH_PATH + 'hash.bat')
     print("Loaded")
 
 
@@ -251,7 +250,13 @@ if __name__ == '__main__':
             continue
 
         if inpt == 1:
-            img = im.loadImageFromPath('../images/z13.jpg', resize=True, maxSize=800)
+            try:
+                file_name = int(raw_input('Input filename: '))
+            except ValueError:
+                file_name = None
+                continue
+
+            img = im.loadImageFromPath('../images/%s' % file_name, resize=True, maxSize=800)
             _kp, _des = sift.detectAndCompute(img, None)
             kp, des = im.sortKp(_kp, _des, 50)
 
