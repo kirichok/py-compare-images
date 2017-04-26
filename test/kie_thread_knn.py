@@ -7,6 +7,7 @@ import numpy as np
 
 import threading
 import Queue
+import time
 
 HASH_PATH = '../images/hash/'
 DES_EXT = '.des'
@@ -30,6 +31,7 @@ class LoadHashThread(threading.Thread):
         self.files = files
         self.flann = flann
         self.event = event
+
 
     def run(self):
         while not self.event.is_set():
@@ -78,6 +80,8 @@ class checkHashThread(threading.Thread):
                         ['- %s(%s): %s\n' % (results['v'][i], results['c'][i], self.files[results['v'][i]]) for i in range(0, len(results['v']))]))
                 else:
                     print 'Not found'
+            else:
+                time.sleep(2)
 
 
 def loadFiles(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
