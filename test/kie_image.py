@@ -63,7 +63,9 @@ def loadKeypointFromPath(path):
 
 
 def loadDesFromPath(path):
-    des = cPickle.loads(zlib.decompress(open(path, 'rb').read()))
+    with open(path, 'rb') as f:
+        des = cPickle.loads(zlib.decompress(f.read()))
+    # des = cPickle.loads(zlib.decompress(open(path, 'rb').read()))
     return np.asarray(des, np.float32)
 
 

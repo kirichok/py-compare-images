@@ -238,7 +238,7 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
 
 
 if __name__ == '__main__':
-    loadFiles()
+    loadFiles(20000)
     lock = threading.Lock()
     threads, event, tasks = startThreads(lock)
 
