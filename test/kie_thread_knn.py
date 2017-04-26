@@ -13,9 +13,10 @@ HASH_PATH = '../images/hash/'
 DES_EXT = '.des'
 
 
-FLANN_INDEX_KDTREE = 0
-index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-search_params = dict(checks=50)
+FLANN_INDEX_KDTREE = 1
+index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=50)
+# search_params = dict(checks=50)
+search_params = {}
 sift = cv2.xfeatures2d.SIFT_create()
 
 flanns = []
@@ -186,8 +187,6 @@ def stopThreads(threads, event):
 
 
 def testFlan():
-
-
     flann = cv2.FlannBasedMatcher(index_params, search_params)
 
     load_descriptors(flann)
@@ -239,7 +238,7 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
 
 
 if __name__ == '__main__':
-    loadFiles(5000)
+    loadFiles()
     lock = threading.Lock()
     threads, event, tasks = startThreads(lock)
 
