@@ -38,7 +38,7 @@ class LoadHashThread(threading.Thread):
                 des = im.loadDesFromPath(task)
                 if len(des) >= 2:
                     self.files.append(im.fileName(task))
-                    self.flann.add([des[:35]])
+                    self.flann.add([des[:25]])
 
 
 class checkHashThread(threading.Thread):
@@ -235,7 +235,7 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
 
 
 if __name__ == '__main__':
-    loadFiles()
+    loadFiles(20000)
     lock = threading.Lock()
     threads, event, tasks = startThreads(lock)
 
