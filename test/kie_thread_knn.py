@@ -1,3 +1,4 @@
+# from memory_profiler import profile
 import cv2
 
 import glob
@@ -13,10 +14,10 @@ HASH_PATH = '../images/hash/'
 DES_EXT = '.des'
 
 
-FLANN_INDEX_KDTREE = 0
+FLANN_INDEX_KDTREE = 1
 index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-search_params = dict(checks=10)
-# search_params = {}
+# search_params = dict(checks=50)
+search_params = {}
 sift = cv2.xfeatures2d.SIFT_create()
 
 flanns = []
@@ -33,15 +34,15 @@ class LoadHashThread(threading.Thread):
         self.flann = flann
         self.event = event
 
-
+    # @profile
     def run(self):
         while not self.event.is_set():
             if not self.task.empty():
                 task = self.task.get()
-                des = im.loadDesFromPath(task)
+                des = im.loadDesFromPath(task, 50)
                 if len(des) >= 2:
                     self.files.append(im.fileName(task))
-                    self.flann.add([des[:25]])
+                    self.flann.add([des])
 
 
 class checkHashThread(threading.Thread):
@@ -84,7 +85,7 @@ class checkHashThread(threading.Thread):
             else:
                 time.sleep(2)
 
-
+# @profile
 def loadFiles(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
     qFiles = []
     folder = 0
@@ -103,9 +104,9 @@ def loadFiles(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
                 curQueue = Queue.Queue(filesInQueue)
                 count = 0
 
-            # if countAll == 1000:
-            #     folder = -2
-            #     break
+            if countAll == 10000:
+                folder = -2
+                break
 
         folder += 1
         path = "%s%s/" % (hashPath, folder)
@@ -151,6 +152,78 @@ def loadFiles(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
         for t in threads:
             t.join()
 
+        print('Training ...')
+        count = 0
+        for f in flanns:
+            f.train()
+            # im.saveDesToPath(f.getTrainDescriptors(), '%sHASH%s' % (HASH_PATH, count))
+            count += 1
+        print('Training end')
+
+@profile
+def loadFiles_test(filesInQueue=10000, hashPath=HASH_PATH, ext=DES_EXT):
+    qFiles = []
+    folder = 0
+    path = "%s%s/" % (hashPath, folder)
+    count = 0
+    countAll = 0
+    curQueue = Queue.Queue(filesInQueue)
+    qFiles.append(curQueue)
+
+    for n in range(0, 10000):
+        curQueue.put('../images/test2.des')
+
+    countAll = 10000
+
+    if countAll == 0:
+        print("Hash files count is empty")
+    else:
+        print("Files count: %d " % countAll)
+
+        threadList = []
+        count = 0
+        while count < len(qFiles):
+            threadList.append("FilesThread-%d" % count)
+            filenames.append([])
+            count += 1
+
+        event = threading.Event()
+        threads = []
+        threadID = 0
+
+        # Create new threads
+        for i, tName in enumerate(threadList):
+            currflann = cv2.FlannBasedMatcher(index_params, search_params)
+            flanns.append(currflann)
+            thread = LoadHashThread(threadID, tName, qFiles[i], currflann, filenames[i], event)
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+            threadID += 1
+
+        # Wait for queue to empty
+        empty = False
+        while not empty:
+            empty = True
+            for q in qFiles:
+                if not (empty and q.empty()):
+                    empty = False
+
+        # Notify threads it's time to exit
+        event.set()
+
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
+
+        print('Training ...')
+        count = 0
+        for f in flanns:
+            f.train()
+            # im.saveDesToPath(f.getTrainDescriptors(), '%sHASH%s' % (HASH_PATH, count))
+            count += 1
+        print('Training end')
+
 
 def startThreads(lock):
     threadList = []
@@ -192,9 +265,9 @@ def testFlan():
     load_descriptors(flann)
 
     # img = im.loadImageFromUrl('http://comicstore.cf/uploads/diamonds/STK360887.jpg', resize=True, maxSize=200)
-    img = im.loadImageFromPath('./images/z13.jpg', resize=True, maxSize=800)
+    img = im.loadImageFromPath('../images/z13.jpg', resize=True, maxSize=500)
     _kp, _des = sift.detectAndCompute(img, None)
-    kp, des = im.sortKp(_kp, _des, 50)
+    kp, des = im.sortKp(_kp, _des, 1000)
 
     t_start = cv2.getTickCount()
     matches = flann.knnMatch(des, k=2)
@@ -227,19 +300,36 @@ def load_descriptors(knn, hashPath=HASH_PATH, withSubFolders=True, ext=DES_EXT):
         return
 
     print("Files count: %d " % len(nameList))
-    for i, n in enumerate(nameList[:10000]):
+    for i, n in enumerate(nameList[:1000]):
         if i % 10000 == 0:
             print '%d/50000' % i
-        knn.add([im.loadDesFromPath(n)[:50]])
+        knn.add([im.loadDesFromPath(n, 25)])
         # knn.train()
     knn.train()
     print("Loaded")
 
-
 if __name__ == '__main__':
-    loadFiles(120000)
-    for f in flanns:
-        f.train()
+
+    testFlan()
+    exit(0)
+
+    # loadFiles(120000)
+
+    # exit(0)
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+    t0 = cv2.getTickCount()
+    dess = im.loadDesFromPath('%sHASH0' % HASH_PATH)
+    t1 = cv2.getTickCount()
+    flann.add(dess)
+    t2 = cv2.getTickCount()
+    # flann.train()
+    t3 = cv2.getTickCount()
+    print "Load: %s" % ((t1 - t0) / cv2.getTickFrequency())
+    print "Add: %s" % ((t2 - t1) / cv2.getTickFrequency())
+    print "Train: %s" % ((t3 - t2) / cv2.getTickFrequency())
+    exit(0)
+
 
     lock = threading.Lock()
     threads, event, tasks = startThreads(lock)

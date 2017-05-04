@@ -5,7 +5,7 @@ import os, os.path
 import kie_mysql as sql
 import kie_image as image
 
-HASH_PATH = '../images/hash/'
+HASH_PATH = '../images/hashORB/'
 
 THREAD_COUNT = 30
 exitFlag = 0
@@ -29,8 +29,8 @@ class HashThread(threading.Thread):
                 data = self.queue.get()
                 self.lock.release()
 
-                url = data['url']
-                folder = '%s%s/' % (HASH_PATH, data['f'])
+                url = data[0]
+                folder = '%s%s/' % (HASH_PATH, data[1])
 
                 img = image.loadImageFromUrl(url, resize=True, maxSize=800)
                 name = image.fileName(url)
@@ -41,6 +41,16 @@ class HashThread(threading.Thread):
         print("Exiting " + self.name)
 
 
+def filesFromFolder(path, ext='.jpg'):
+    import glob
+    images = []
+    if os.path.exists(path):
+        for imagePath in glob.glob("%s*%s" % (path, ext)):
+            images.append(imagePath)
+
+    return images
+
+
 threadList = []
 count = 0
 while count < THREAD_COUNT:
@@ -48,6 +58,7 @@ while count < THREAD_COUNT:
     count += 1
 
 nameList = sql.allComics()
+# nameList = filesFromFolder('../images/tatto/')
 
 if len(nameList) == 0:
     exit(0)
@@ -72,7 +83,7 @@ i = 0
 for word in nameList:
     if i == 0:
         os.makedirs('%s%s/' % (HASH_PATH, _folder))
-    workQueue.put({'url': word, 'f': _folder})
+    workQueue.put((word, _folder))
     i += 1
     if i == 1000:
         i = 0

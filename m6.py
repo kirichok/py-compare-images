@@ -15,17 +15,18 @@ import imagehash
 # [[len(_w['points']) for _w in _h] for _h in _kp]
 
 MIN_MATCH_COUNT = 100
+# PATH = './images/tatto/'
 PATH = './images/'
 # PATH = 'http://192.168.0.164:3000/media/'
-fn3 = 'http://comicstore.cf/uploads/diamonds/STK309612.jpg'
-fn1 = 'j11.jpg'
-fn2 = 'j1.jpg'
+fn1 = 'j1.jpg'
+fn2 = 'j11.jpg'
+# fn1 = '2.jpg'
+# fn2 = '7.jpg'
 
 e1 = cv2.getTickCount()
 t_start = cv2.getTickCount()
 
-img1 = im.loadImageFromPath(PATH + fn1, resize=True, maxSize=200)
-h1, w1 = img1.shape[:2]
+img1 = im.loadImageFromPath(PATH + fn1, resize=True, maxSize=800)
 t_end = cv2.getTickCount()
 # print "Time loading 1: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
@@ -37,7 +38,7 @@ t_end = cv2.getTickCount()
 
 
 # t_start = cv2.getTickCount()
-img2 = im.loadImageFromPath(PATH + fn2, resize=True, maxSize=200)
+img2 = im.loadImageFromPath(PATH + fn2, resize=True, maxSize=800)
 # img2 = im.loadImageFromUrl(fn3, resize=True, maxSize=800)
 # h2, w2 = img2.shape[:2]
 # t_end = cv2.getTickCount()
@@ -47,7 +48,10 @@ img2 = im.loadImageFromPath(PATH + fn2, resize=True, maxSize=200)
 # cv2.waitKey(0)
 
 # Initiate SIFT detector
-sift = cv2.xfeatures2d.SIFT_create()
+
+# sift = cv2.xfeatures2d.SURF_create()
+# sift = cv2.xfeatures2d.SIFT_create()
+sift = cv2.ORB_create()
 
 # find the keypoints and descriptors with SIFT
 # t_start = cv2.getTickCount()
@@ -55,6 +59,8 @@ sift = cv2.xfeatures2d.SIFT_create()
 _kp1, _des1 = sift.detectAndCompute(img1, None)
 kp1, des1 = im.sortKp(_kp1, _des1, 100)
 # kp1, des1 = sortKp(_kp1, _des1, h1, w1)
+
+# im.saveDesToPath__(des1, PATH + 'test5.des')
 
 # print "Time keypoint len: %s" % len(kp1)
 # im.saveKpDesToPath(kp1, des1, PATH + im.fileName(fn1) + '.kp.png')
@@ -111,15 +117,15 @@ kp2, des2 = im.sortKp(_kp2, _des2, 100)
 # t_end = cv2.getTickCount()
 # print "Time keypoint 2: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
-FLANN_INDEX_KDTREE = 1
+FLANN_INDEX_KDTREE = 0
 index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-search_params = {}
-# search_params = dict(checks=50)
+# search_params = {}
+search_params = dict(checks=50)
 
 flann = cv2.FlannBasedMatcher(index_params, search_params)
 
 t_start = cv2.getTickCount()
-matches = flann.knnMatch(des1, des2, k=2, compactResult=True)
+matches = flann.knnMatch(des1, des2, k=2)
 t_end = cv2.getTickCount()
 print "Time match: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 
@@ -127,7 +133,7 @@ print "Time match: %s" % ((t_end - t_start) / cv2.getTickFrequency())
 t_start = cv2.getTickCount()
 good = []
 for m, n in matches:
-    if m.distance < 0.7 * n.distance:
+    if m.distance <= 1 * n.distance:
         good.append(m)
 
 if len(good) > 10:

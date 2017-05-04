@@ -23,8 +23,8 @@ def test1():
 
     ## 1.b add positives and negatives to the bowtrainer, use SIFT DescriptorExtractor
     def feature_sift(fn):
-        im = im.loadImageFromPath(fn, resize=True, maxSize=800)
-        kp, des = im.keypointDesCalc(im, count=100)
+        img = im.loadImageFromPath(fn, resize=True, maxSize=800)
+        kp, des = im.keypointDesCalc(img, count=100)
         return des
 
 
